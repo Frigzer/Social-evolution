@@ -1,5 +1,5 @@
-﻿# CMakeList.txt: plik projektu CMake najwyższego poziomu, wykonaj konfigurację globalną
-# i uwzględnij podprojekty w tym miejscu.
+﻿# CMakeList.txt: projekt CMake dla elementu Social-evolution, dołącz źródło i zdefiniuj
+# tutaj logikę specyficzną dla projektu.
 #
 cmake_minimum_required (VERSION 3.8)
 
@@ -11,5 +11,11 @@ endif()
 
 project ("Social-evolution")
 
-# Uwzględnij podprojekty.
-add_subdirectory ("Social-evolution")
+# Dodaj źródło do pliku wykonywalnego tego projektu.
+add_executable (Social-evolution "Social-evolution.cpp" "Social-evolution.h")
+
+if (CMAKE_VERSION VERSION_GREATER 3.12)
+  set_property(TARGET Social-evolution PROPERTY CXX_STANDARD 20)
+endif()
+
+# TODO: Dodaj testy i zainstaluj elementy docelowe w razie potrzeby.
