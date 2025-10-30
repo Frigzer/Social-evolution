@@ -5,4 +5,8 @@
 
 #include <iostream>
 
+#include <SFML/Graphics.hpp>
+#include <imgui.h>
+#include <imgui-SFML.h>
+
 // TODO: W tym miejscu przywołaj dodatkowe nagłówki wymagane przez program.
