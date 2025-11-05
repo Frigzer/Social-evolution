@@ -7,6 +7,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+set(FETCHCONTENT_BASE_DIR ${CMAKE_BINARY_DIR}/external)
+set(SOURCE_DIR src)
 
 # Włącz przeładowywanie kodu XAML na gorąco dla kompilatorów MSVC, jeśli jest to obsługiwane.
 if (POLICY CMP0141)
@@ -39,7 +41,20 @@ FetchContent_MakeAvailable(ImGui-SFML)
 project ("Social-evolution")
 
 # Dodaj źródło do pliku wykonywalnego tego projektu.
-add_executable (Social-evolution "Social-evolution.cpp" "Social-evolution.h")
+add_executable (Social-evolution)
+
+target_sources(Social-evolution
+    PRIVATE
+        ${SOURCE_DIR}/main.cpp
+        ${SOURCE_DIR}/Agent.cpp
+        ${SOURCE_DIR}/Grid.cpp
+        ${SOURCE_DIR}/Simulation.cpp
+)
+
+target_include_directories(Social-evolution
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 target_link_libraries(Social-evolution
     PRIVATE
