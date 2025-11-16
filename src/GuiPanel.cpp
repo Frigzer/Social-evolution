@@ -1,0 +1,42 @@
+#include "GuiPanel.hpp"
+
+GuiPanel::GuiPanel(Simulation& s, bool& r) : sim(s), running(r) {}
+
+void GuiPanel::update(sf::RenderWindow& win) {
+
+    float simAreaWidth = 800.f;
+    float panelWidth = win.getSize().x - simAreaWidth;
+
+    // t³o panelu (opcjonalnie mo¿na wyrenderowaæ w Renderer)
+    sf::RectangleShape sidebar({ panelWidth, (float)win.getSize().y });
+    sidebar.setPosition({ simAreaWidth, 0 });
+    sidebar.setFillColor(sf::Color(30, 30, 30));
+    win.draw(sidebar);
+
+    // pozycja i rozmiar okna GUI
+    ImGui::SetNextWindowPos({ simAreaWidth + 10.f, 10.f }, ImGuiCond_Always);
+    ImGui::SetNextWindowSize({ panelWidth - 20.f, (float)win.getSize().y - 20.f }, ImGuiCond_Always);
+    ImGui::SetNextWindowBgAlpha(0.0f);
+
+    ImGui::Begin("Sterowanie", nullptr,
+        ImGuiWindowFlags_NoMove |
+        ImGuiWindowFlags_NoResize |
+        ImGuiWindowFlags_NoCollapse |
+        ImGuiWindowFlags_NoTitleBar |
+        ImGuiWindowFlags_NoBringToFrontOnFocus);
+
+    if (ImGui::Button(running ? "Pauza" : "Start")) running = !running;
+    if (ImGui::Button("Krok")) sim.step();
+
+    ImGui::Separator();
+
+    ImGui::Text("Macierz wyplat:");
+    ImGui::SliderFloat("R", &sim.matrix.R, 0, 10);
+    ImGui::SliderFloat("T", &sim.matrix.T, 0, 10);
+    ImGui::SliderFloat("S", &sim.matrix.S, 0, 10);
+    ImGui::SliderFloat("P", &sim.matrix.P, 0, 10);
+
+    ImGui::Text("Cooperation: %.2f%%", sim.cooperationRate() * 100.f);
+
+    ImGui::End();
+}
