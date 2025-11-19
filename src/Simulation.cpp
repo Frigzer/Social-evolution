@@ -44,6 +44,8 @@ void Simulation::step() {
     // zastosowanie nowych strategii
     for (size_t i = 0; i < grid.agents.size(); ++i)
         grid.agents[i].strategy = next[i];
+
+    generation++;
 }
 
 float Simulation::cooperationRate() const {
