@@ -38,5 +38,7 @@ void GuiPanel::update(sf::RenderWindow& win) {
 
     ImGui::Text("Cooperation: %.2f%%", sim.cooperationRate() * 100.f);
 
+    ImGui::Text("Pokolenie: %d", sim.generation);
+
     ImGui::End();
 }
