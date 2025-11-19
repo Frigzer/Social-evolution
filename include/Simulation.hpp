@@ -10,6 +10,8 @@ public:
     Grid grid;
     PayoffMatrix matrix;
 
+    int generation = 0;
+
     Simulation(int width, int height, PayoffMatrix m);
     void step(); // jedna runda ewolucji
     float cooperationRate() const;
