@@ -40,5 +40,20 @@ void GuiPanel::update(sf::RenderWindow& win) {
 
     ImGui::Text("Pokolenie: %d", sim.generation);
 
+    const char* boundaryItems[] = { "Torus (wrap)", "Clamp", "Reflect", "Absorbing (outside empty)" };
+    int boundaryIdx = static_cast<int>(sim.grid.boundary);
+
+    if (ImGui::Combo("Warunki brzegowe", &boundaryIdx, boundaryItems, IM_ARRAYSIZE(boundaryItems))) {
+        sim.grid.boundary = static_cast<BoundaryMode>(boundaryIdx);
+    }
+
+    const char* neighborhoodItems[] = { "Moore (8)", "von Neumann (4)" };
+    int neighIdx = static_cast<int>(sim.grid.neighborhood);
+
+    if (ImGui::Combo("Sasiedztwo", &neighIdx, neighborhoodItems, IM_ARRAYSIZE(neighborhoodItems))) {
+        sim.grid.neighborhood = static_cast<NeighborhoodType>(neighIdx);
+    }
+
+
     ImGui::End();
 }
