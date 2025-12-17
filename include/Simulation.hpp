@@ -13,11 +13,16 @@ enum class UpdateRule {
 
 class Simulation {
 private:
+    std::vector<std::unique_ptr<Agent>> agents; // w³aœciciel agentów
     std::mt19937 rng;
 
 public:
     Grid grid;
     PayoffMatrix matrix;
+
+    // parametry nowego modelu:
+    float density = 0.7f;     // % pól zajêtych
+    float moveProb = 0.3f;    // szansa ruchu na pokolenie
 
     // nowe:
     UpdateRule updateRule = UpdateRule::Fermi;
@@ -27,6 +32,7 @@ public:
     int generation = 0;
 
     Simulation(int width, int height, PayoffMatrix m);
+
     void step(); // jedna runda ewolucji
     float cooperationRate() const;
 };

@@ -67,6 +67,8 @@ void GuiPanel::update(sf::RenderWindow& win) {
     ImGui::Text("Generation: %d", sim.generation);
     ImGui::Text("Cooperation: %.2f%%", sim.cooperationRate() * 100.f);
 
+    ImGui::SliderFloat("Density", &sim.density, 0.1f, 1.0f);
+    ImGui::SliderFloat("Move prob", &sim.moveProb, 0.0f, 1.0f);
 
     ImGui::End();
 }

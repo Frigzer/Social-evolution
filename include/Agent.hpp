@@ -5,7 +5,7 @@ enum class Strategy { Cooperate, Defect };
 
 class Agent {
 public:
-    Strategy strategy;
+    Strategy strategy = Strategy::Cooperate;
     float payoff = 0.0f;
 
     // przysz³oœæ:

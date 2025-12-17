@@ -13,7 +13,13 @@ void SimulationRenderer::draw(sf::RenderWindow& win) {
     for (int y = 0; y < sim.grid.height; ++y) {
         for (int x = 0; x < sim.grid.width; ++x) {
             cell.setPosition({ x * cellSize, y * cellSize });
-            cell.setFillColor(sim.grid.get(x, y).getColor());
+            Agent* a = sim.grid.get(x, y);
+            if (!a) {
+                cell.setFillColor(sf::Color(60, 60, 60)); // puste pole
+            }
+            else {
+                cell.setFillColor(a->getColor());
+            }
             win.draw(cell);
         }
     }

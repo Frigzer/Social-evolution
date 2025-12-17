@@ -1,31 +1,5 @@
 #include "Grid.hpp"
 
-Grid::Grid(int w, int h)
-    : width(w), height(h), agents(w* h) {}
-
-Agent& Grid::get(int x, int y) {
-    return agents[y * width + x];
-}
-
-const Agent& Grid::get(int x, int y) const {
-    return agents[y * width + x];
-}
-
-/*
-std::vector<Agent*> Grid::getNeighbors(int x, int y) {
-    std::vector<Agent*> neighbors;
-    for (int dy = -1; dy <= 1; ++dy) {
-        for (int dx = -1; dx <= 1; ++dx) {
-            if (dx == 0 && dy == 0) continue;
-            int nx = (x + dx + width) % width;
-            int ny = (y + dy + height) % height;
-            neighbors.push_back(&get(nx, ny));
-        }
-    }
-    return neighbors;
-}
-*/
-
 static int clampInt(int v, int lo, int hi) {
     if (v < lo) return lo;
     if (v > hi) return hi;
@@ -37,7 +11,7 @@ static int modWrap(int v, int m) {
     return (r < 0) ? r + m : r;
 }
 
-static int reflect(int v, int m) {
+static int reflectIndex(int v, int m) {
     // odbicie: -1 -> 0, m -> m-1, m+1 -> m-2 itd.
     if (m <= 1) return 0;
     while (v < 0 || v >= m) {
@@ -47,15 +21,33 @@ static int reflect(int v, int m) {
     return v;
 }
 
+Grid::Grid(int w, int h)
+    : width(w), height(h), agents(w* h, nullptr) {}
+
+Agent*& Grid::get(int x, int y) {
+    return agents[y * width + x];
+}
+
+const Agent* Grid::get(int x, int y) const {
+    return agents[y * width + x];
+}
+
 bool Grid::inBounds(int x, int y) const {
     return (x >= 0 && x < width&& y >= 0 && y < height);
+}
+
+bool Grid::isEmpty(int x, int y) const {
+    return get(x, y) == nullptr;
 }
 
 int Grid::mapX(int x) const {
     switch (boundary) {
     case BoundaryMode::Torus:   return modWrap(x, width);
     case BoundaryMode::Clamp:   return clampInt(x, 0, width - 1);
-    case BoundaryMode::Reflect: return reflect(x, width);
+    case BoundaryMode::Reflect: return reflectIndex(x, width);
+    case BoundaryMode::Absorbing:
+        // dla Absorbing mapX/mapY nie s¹ u¿ywane (obs³ugujemy to w getNeighborCoords)
+        return x;
     }
     return modWrap(x, width);
 }
@@ -64,18 +56,19 @@ int Grid::mapY(int y) const {
     switch (boundary) {
     case BoundaryMode::Torus:   return modWrap(y, height);
     case BoundaryMode::Clamp:   return clampInt(y, 0, height - 1);
-    case BoundaryMode::Reflect: return reflect(y, height);
+    case BoundaryMode::Reflect: return reflectIndex(y, height);
+    case BoundaryMode::Absorbing:
+        return y;
     }
     return modWrap(y, height);
 }
 
-std::vector<Agent*> Grid::getNeighbors(int x, int y) {
-    std::vector<Agent*> neighbors;
+std::vector<std::pair<int, int>> Grid::getNeighborCoords(int x, int y) const {
+    std::vector<std::pair<int, int>> out;
 
     if (neighborhood == NeighborhoodType::Moore) {
-        neighbors.reserve(8);
-
-        for (int dy = -1; dy <= 1; ++dy) {
+        out.reserve(8);
+        for (int dy = -1; dy <= 1; ++dy)
             for (int dx = -1; dx <= 1; ++dx) {
                 if (dx == 0 && dy == 0) continue;
 
@@ -84,35 +77,28 @@ std::vector<Agent*> Grid::getNeighbors(int x, int y) {
 
                 if (boundary == BoundaryMode::Absorbing) {
                     if (!inBounds(rx, ry)) continue;
-                    neighbors.push_back(&get(rx, ry));
+                    out.emplace_back(rx, ry);
                 }
                 else {
-                    neighbors.push_back(&get(mapX(rx), mapY(ry)));
+                    out.emplace_back(mapX(rx), mapY(ry));
                 }
             }
-        }
     }
-    else { // Von Neumann
-        neighbors.reserve(4);
-
-        const int offsets[4][2] = {
-            { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 }
-        };
-
-        for (auto& o : offsets) {
-            int rx = x + o[0];
-            int ry = y + o[1];
-
+    else { // VonNeumann
+        out.reserve(4);
+        const int off[4][2] = { {1,0},{-1,0},{0,1},{0,-1} };
+        for (auto& o : off) {
+            int rx = x + o[0], ry = y + o[1];
             if (boundary == BoundaryMode::Absorbing) {
                 if (!inBounds(rx, ry)) continue;
-                neighbors.push_back(&get(rx, ry));
+                out.emplace_back(rx, ry);
             }
             else {
-                neighbors.push_back(&get(mapX(rx), mapY(ry)));
+                out.emplace_back(mapX(rx), mapY(ry));
             }
         }
     }
 
-    return neighbors;
+    return out;
 }
 
