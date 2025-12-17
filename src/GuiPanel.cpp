@@ -36,9 +36,9 @@ void GuiPanel::update(sf::RenderWindow& win) {
     ImGui::SliderFloat("S", &sim.matrix.S, 0, 10);
     ImGui::SliderFloat("P", &sim.matrix.P, 0, 10);
 
-    ImGui::Text("Cooperation: %.2f%%", sim.cooperationRate() * 100.f);
+    //ImGui::Text("Cooperation: %.2f%%", sim.cooperationRate() * 100.f);
 
-    ImGui::Text("Pokolenie: %d", sim.generation);
+    //ImGui::Text("Pokolenie: %d", sim.generation);
 
     const char* boundaryItems[] = { "Torus (wrap)", "Clamp", "Reflect", "Absorbing (outside empty)" };
     int boundaryIdx = static_cast<int>(sim.grid.boundary);
@@ -53,6 +53,19 @@ void GuiPanel::update(sf::RenderWindow& win) {
     if (ImGui::Combo("Sasiedztwo", &neighIdx, neighborhoodItems, IM_ARRAYSIZE(neighborhoodItems))) {
         sim.grid.neighborhood = static_cast<NeighborhoodType>(neighIdx);
     }
+
+    const char* rules[] = { "Best neighbor", "Fermi" };
+    int ruleIdx = (sim.updateRule == UpdateRule::BestNeighbor) ? 0 : 1;
+
+    if (ImGui::Combo("Update rule", &ruleIdx, rules, IM_ARRAYSIZE(rules))) {
+        sim.updateRule = (ruleIdx == 0) ? UpdateRule::BestNeighbor : UpdateRule::Fermi;
+    }
+
+    ImGui::SliderFloat("Mutation rate", &sim.mutationRate, 0.0f, 0.05f, "%.4f");
+    ImGui::SliderFloat("Fermi k", &sim.fermiK, 0.01f, 2.0f, "%.3f");
+
+    ImGui::Text("Generation: %d", sim.generation);
+    ImGui::Text("Cooperation: %.2f%%", sim.cooperationRate() * 100.f);
 
 
     ImGui::End();

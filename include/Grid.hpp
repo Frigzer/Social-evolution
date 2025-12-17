@@ -14,6 +14,7 @@ enum class NeighborhoodType {
     VonNeumann    // 4 s¹siadów
 };
 
+
 class Grid {
 public:
     int width, height;

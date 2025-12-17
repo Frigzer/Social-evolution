@@ -8,6 +8,11 @@ public:
     Strategy strategy;
     float payoff = 0.0f;
 
+    // przysz³oœæ:
+    int age = 0;
+    int strategyAge = 0;   // ile generacji nie zmienia³ strategii
+    float lastPayoff = 0.0f;
+
     Agent(Strategy s = Strategy::Cooperate);
     sf::Color getColor() const; // kolor do wizualizacji
 };
