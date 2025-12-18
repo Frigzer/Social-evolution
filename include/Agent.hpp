@@ -8,6 +8,8 @@ public:
     Strategy strategy = Strategy::Cooperate;
     float payoff = 0.0f;
 
+    bool alive = true;
+
     // przysz³oœæ:
     int age = 0;
     int strategyAge = 0;   // ile generacji nie zmienia³ strategii
