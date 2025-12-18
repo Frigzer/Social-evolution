@@ -22,11 +22,37 @@ Simulation::Simulation(int width, int height, PayoffMatrix m)
     }
 }
 
+float Simulation::payoffVs(Strategy a, Strategy b) const {
+    if (a == Strategy::Cooperate && b == Strategy::Cooperate) return matrix.R;
+    if (a == Strategy::Cooperate && b == Strategy::Defect)    return matrix.S;
+    if (a == Strategy::Defect && b == Strategy::Cooperate) return matrix.T;
+    return matrix.P;
+}
+
+float Simulation::expectedPayoffAt(int x, int y, Strategy s) const {
+    float sum = 0.0f;
+    int k = 0;
+
+    auto neigh = grid.getNeighborCoords(x, y);
+    for (auto [nx, ny] : neigh) {
+        const Agent* n = grid.get(nx, ny);
+        if (!n) continue;
+        sum += payoffVs(s, n->strategy);
+        k++;
+    }
+
+    if (normalizePayoff) {
+        return (k > 0) ? (sum / (float)k) : 0.0f;
+    }
+    return sum;
+}
+
+
 void Simulation::step() {
     std::uniform_real_distribution<float> uni01(0.f, 1.f);
 
     // =========================
-    // FAZA 1: RUCH (random walk)
+    // FAZA 1: RUCH (success-driven, r=1)
     // =========================
     {
         std::vector<std::pair<int, int>> order;
@@ -42,14 +68,31 @@ void Simulation::step() {
             if (!a) continue;
             if (uni01(rng) > moveProb) continue;
 
+            // obecna "jakoœæ" miejsca
+            float current = expectedPayoffAt(x, y, a->strategy);
+
+            // sprawdŸ puste pola w s¹siedztwie r=1
             auto neigh = grid.getNeighborCoords(x, y);
-            std::shuffle(neigh.begin(), neigh.end(), rng);
+
+            float bestVal = current;
+            int bestX = x, bestY = y;
 
             for (auto [nx, ny] : neigh) {
-                if (grid.isEmpty(nx, ny)) {
-                    grid.get(nx, ny) = a;
+                if (!grid.isEmpty(nx, ny)) continue;
+
+                float cand = expectedPayoffAt(nx, ny, a->strategy);
+                if (cand > bestVal) {
+                    bestVal = cand;
+                    bestX = nx;
+                    bestY = ny;
+                }
+            }
+
+            // przesuñ siê tylko, jeœli realnie lepiej (epsilon)
+            if (bestX != x || bestY != y) {
+                if (bestVal >= current + moveEpsilon) {
+                    grid.get(bestX, bestY) = a;
                     grid.get(x, y) = nullptr;
-                    break;
                 }
             }
         }
@@ -67,19 +110,31 @@ void Simulation::step() {
             Agent* a = grid.get(x, y);
             if (!a) continue;
 
+            float sum = 0.0f;
+            int k = 0;
+
             auto neigh = grid.getNeighborCoords(x, y);
             for (auto [nx, ny] : neigh) {
                 Agent* n = grid.get(nx, ny);
                 if (!n) continue;
 
                 if (a->strategy == Strategy::Cooperate && n->strategy == Strategy::Cooperate)
-                    a->payoff += matrix.R;
+                    sum += matrix.R;
                 else if (a->strategy == Strategy::Cooperate && n->strategy == Strategy::Defect)
-                    a->payoff += matrix.S;
+                    sum += matrix.S;
                 else if (a->strategy == Strategy::Defect && n->strategy == Strategy::Cooperate)
-                    a->payoff += matrix.T;
+                    sum += matrix.T;
                 else
-                    a->payoff += matrix.P;
+                    sum += matrix.P;
+
+                k++;
+            }
+
+            if (normalizePayoff) {
+                a->payoff = (k > 0) ? (sum / (float)k) : 0.0f;
+            }
+            else {
+                a->payoff = sum;
             }
         }
     }

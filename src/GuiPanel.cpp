@@ -68,7 +68,11 @@ void GuiPanel::update(sf::RenderWindow& win) {
     ImGui::Text("Cooperation: %.2f%%", sim.cooperationRate() * 100.f);
 
     ImGui::SliderFloat("Density", &sim.density, 0.1f, 1.0f);
-    ImGui::SliderFloat("Move prob", &sim.moveProb, 0.0f, 1.0f);
+    
+    ImGui::Checkbox("Normalize payoff (avg)", &sim.normalizePayoff);
+    ImGui::SliderFloat("Move prob", &sim.moveProb, 0.0f, 1.0f, "%.2f");
+    ImGui::SliderFloat("Move epsilon", &sim.moveEpsilon, 0.0f, 1.0f, "%.3f");
+
 
     ImGui::End();
 }

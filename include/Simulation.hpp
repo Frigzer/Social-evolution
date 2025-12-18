@@ -16,6 +16,9 @@ private:
     std::vector<std::unique_ptr<Agent>> agents; // w³aœciciel agentów
     std::mt19937 rng;
 
+    float expectedPayoffAt(int x, int y, Strategy s) const;
+    float payoffVs(Strategy a, Strategy b) const;
+
 public:
     Grid grid;
     PayoffMatrix matrix;
@@ -23,6 +26,11 @@ public:
     // parametry nowego modelu:
     float density = 0.7f;     // % pól zajêtych
     float moveProb = 0.3f;    // szansa ruchu na pokolenie
+
+    bool normalizePayoff = true;
+
+    // ruch "success-driven"
+    float moveEpsilon = 0.05f; // minimalna poprawa, ¿eby op³aca³o siê ruszyæ
 
     // nowe:
     UpdateRule updateRule = UpdateRule::Fermi;
