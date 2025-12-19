@@ -72,7 +72,6 @@ void GuiPanel::update(sf::RenderWindow& win) {
     ImGui::Text("Mode: Death-Birth");
     ImGui::SliderFloat("Death prob", &sim.deathProb, 0.0f, 0.2f, "%.3f");
     ImGui::SliderFloat("Selection beta", &sim.selectionBeta, 0.0f, 5.0f, "%.2f");
-    ImGui::SliderFloat("Birth mutation", &sim.birthMutation, 0.0f, 0.05f, "%.4f");
 
     ImGui::Checkbox("Normalize payoff (avg)", &sim.normalizePayoff);
     ImGui::SliderFloat("Move prob", &sim.moveProb, 0.0f, 1.0f, "%.2f");

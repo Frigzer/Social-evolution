@@ -3,7 +3,7 @@
 SimulationApp::SimulationApp()
     : window(sf::VideoMode({ 1100, 800 }), "Ewolucja zachowan spolecznych",
         sf::Style::Titlebar | sf::Style::Close),
-    sim(50, 50, { 3, 5, 0, 1 }),
+    sim(50, 50, { 3, 4, 0, 0.1 }),
     renderer(sim),
     gui(sim, running)
 {

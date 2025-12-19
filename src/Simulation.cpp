@@ -191,7 +191,19 @@ void Simulation::step() {
                 if (!willUpdate[y * grid.width + x]) continue;
                 Agent* a = grid.get(x, y);
                 if (!a) continue; // teoretycznie nie powinno siê zdarzyæ, ale bezpiecznie
-                a->strategy = nextStrategies[y * grid.width + x];
+
+                // STARY KOD:
+                // a->strategy = nextStrategies[y * grid.width + x];
+
+                // NOWY KOD (z obs³ug¹ wieku):
+                Strategy newStrat = nextStrategies[y * grid.width + x];
+                if (a->strategy == newStrat) {
+                    a->strategyAge++; // Wierny strategii -> wiek roœnie
+                }
+                else {
+                    a->strategy = newStrat;
+                    a->strategyAge = 0; // Zmiana pogl¹dów -> reset licznika
+                }
             }
         }
     }
@@ -269,9 +281,11 @@ void Simulation::step() {
                 child->payoff = 0.0f;
                 child->strategy = parent->strategy;
 
+                child->strategyAge = 0;
+
                 // mutacja potomka
-                if (birthMutation > 0.0f) {
-                    std::bernoulli_distribution mut(birthMutation);
+                if (mutationRate > 0.0f) {
+                    std::bernoulli_distribution mut(mutationRate);
                     if (mut(rng)) {
                         child->strategy = (child->strategy == Strategy::Cooperate)
                             ? Strategy::Defect
@@ -280,6 +294,13 @@ void Simulation::step() {
                 }
 
                 grid.get(x, y) = child;
+            }
+        }
+
+        // Postarzanie ocala³ych
+        for (auto& ag : agents) {
+            if (ag->alive) {
+                ag->strategyAge++;
             }
         }
 
@@ -295,10 +316,15 @@ void Simulation::step() {
         std::bernoulli_distribution mut(mutationRate);
         for (auto& up : agents) {
             Agent* a = up.get();
+            // Pomijamy martwych (dla bezpieczeñstwa, choæ w Imitation wszyscy ¿yj¹)
+            if (!a->alive) continue;
+
             if (mut(rng)) {
                 a->strategy = (a->strategy == Strategy::Cooperate)
                     ? Strategy::Defect
                     : Strategy::Cooperate;
+
+                a->strategyAge = 0; // Mutacja to nowa strategia -> reset
             }
         }
     }

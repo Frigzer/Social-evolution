@@ -38,7 +38,6 @@ public:
 
     float deathProb = 0.02f;      // szansa œmierci w pokoleniu
     float selectionBeta = 1.0f;   // si³a selekcji w reprodukcji (wiêksze => bardziej "wygrywa najlepszy")
-    float birthMutation = 0.002f; // mutacja potomka przy narodzinach
 
     bool normalizePayoff = true;
 
@@ -47,8 +46,8 @@ public:
 
     // nowe:
     UpdateRule updateRule = UpdateRule::Fermi;
-    float mutationRate = 0.005f;   // 0.5%
-    float fermiK = 0.2f;           // "temperatura selekcji"
+    float mutationRate = 0.001f;   // 0.5%
+    float fermiK = 0.1f;           // "temperatura selekcji"
 
     int generation = 0;
 
