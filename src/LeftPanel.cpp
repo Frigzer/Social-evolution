@@ -17,7 +17,9 @@ LeftPanelMode LeftPanel::getMode() const { return mode; }
 void LeftPanel::draw() {
     // Lewy panel: sta³y rozmiar, bez titlebara
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
-    ImGui::SetNextWindowSize(ImVec2(LEFT_W, LEFT_H), ImGuiCond_Always);
+    ImGui::SetNextWindowSize(ImVec2((float)LEFT_PANEL_WIDTH, (float)WINDOW_HEIGHT), ImGuiCond_Always);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
 
     ImGui::Begin("LeftPanel", nullptr,
         ImGuiWindowFlags_NoResize |
@@ -29,6 +31,8 @@ void LeftPanel::draw() {
     else drawMetricsView();
 
     ImGui::End();
+
+    ImGui::PopStyleVar();
 }
 
 void LeftPanel::drawSimulationView() {
@@ -57,6 +61,10 @@ static void fillSeriesWindowed(const std::deque<MetricsSample>& hist,
 }
 
 void LeftPanel::drawMetricsView() {
+    // Dodajemy margines dla treœci
+    ImGui::Indent(10.0f);
+    ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Odstêp od góry
+
     const auto& m = sim.lastMetrics;
 
     ImGui::Text("Generation: %d", m.generation);
@@ -96,4 +104,6 @@ void LeftPanel::drawMetricsView() {
 
     ImGui::Separator();
     ImGui::Text("Tip: Toggle view from the right menu. Simulation continues running.");
+
+    ImGui::Unindent(10.0f);
 }

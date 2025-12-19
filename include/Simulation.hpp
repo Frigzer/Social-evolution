@@ -50,7 +50,7 @@ public:
     Grid grid;
     PayoffMatrix matrix;
 
-    EvolutionMode mode = EvolutionMode::Imitation;
+    EvolutionMode mode = EvolutionMode::DeathBirth;
 
     // parametry nowego modelu:
     float density = 0.7f;     // % pól zajêtych

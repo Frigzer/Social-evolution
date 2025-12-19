@@ -1,9 +1,9 @@
 #include "SimulationApp.hpp"
 
 SimulationApp::SimulationApp()
-    : window(sf::VideoMode({ WIN_W, WIN_H }), "Ewolucja zachowan spolecznych",
+    : window(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "Ewolucja zachowan spolecznych",
         sf::Style::Titlebar | sf::Style::Close),
-    sim(100, 100, { 3, 4, 0, 0.1 }),
+    sim(GRID_WIDTH, GRID_HEIGHT, { 3, 4, 0, 0.1 }),
     renderer(sim),
     gui(sim, running),
     leftPanel(sim, renderer)
@@ -11,7 +11,7 @@ SimulationApp::SimulationApp()
     window.setFramerateLimit(30);
     ImGui::SFML::Init(window);
 
-    leftPanel.setSize({ LEFT_W, WIN_H });
+    leftPanel.setSize({ LEFT_PANEL_WIDTH, WINDOW_HEIGHT });
 }
 
 SimulationApp::~SimulationApp() {

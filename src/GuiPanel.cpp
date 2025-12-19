@@ -4,17 +4,20 @@ GuiPanel::GuiPanel(Simulation& s, bool& r) : sim(s), running(r) {}
 
 void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
 
-    float simAreaWidth = (float)LEFT_W;
-    float panelWidth = win.getSize().x - simAreaWidth;
+    // Zamiast liczyæ, bierzemy ze sta³ych
+    float startX = (float)LEFT_PANEL_WIDTH;
+    float panelWidth = (float)RIGHT_PANEL_WIDTH;
+    float panelHeight = (float)WINDOW_HEIGHT;
+
 
     // t³o panelu (opcjonalnie mo¿na wyrenderowaæ w Renderer)
     sf::RectangleShape sidebar({ panelWidth, (float)win.getSize().y });
-    sidebar.setPosition({ simAreaWidth, 0 });
+    sidebar.setPosition({ startX, 0 });
     sidebar.setFillColor(sf::Color(30, 30, 30));
     win.draw(sidebar);
 
     // pozycja i rozmiar okna GUI
-    ImGui::SetNextWindowPos({ simAreaWidth + 10.f, 10.f }, ImGuiCond_Always);
+    ImGui::SetNextWindowPos({ startX + 10.f, 10.f }, ImGuiCond_Always);
     ImGui::SetNextWindowSize({ panelWidth - 20.f, (float)win.getSize().y - 20.f }, ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(0.0f);
 
