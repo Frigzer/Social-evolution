@@ -2,9 +2,9 @@
 
 GuiPanel::GuiPanel(Simulation& s, bool& r) : sim(s), running(r) {}
 
-void GuiPanel::update(sf::RenderWindow& win) {
+void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
 
-    float simAreaWidth = 800.f;
+    float simAreaWidth = (float)LEFT_W;
     float panelWidth = win.getSize().x - simAreaWidth;
 
     // t³o panelu (opcjonalnie mo¿na wyrenderowaæ w Renderer)
@@ -77,6 +77,11 @@ void GuiPanel::update(sf::RenderWindow& win) {
     ImGui::SliderFloat("Move prob", &sim.moveProb, 0.0f, 1.0f, "%.2f");
     ImGui::SliderFloat("Move epsilon", &sim.moveEpsilon, 0.0f, 1.0f, "%.3f");
 
+    ImGui::SeparatorText("View");
+    if (ImGui::RadioButton("Simulation", leftMode == LeftPanelMode::Simulation))
+        leftMode = LeftPanelMode::Simulation;
+    if (ImGui::RadioButton("Metrics", leftMode == LeftPanelMode::Metrics))
+        leftMode = LeftPanelMode::Metrics;
 
     ImGui::End();
 }

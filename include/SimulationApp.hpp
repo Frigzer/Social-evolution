@@ -5,6 +5,7 @@
 
 #include "Simulation.hpp"
 #include "SimulationRenderer.hpp"
+#include "LeftPanel.hpp"
 #include "GuiPanel.hpp"
 
 class SimulationApp {
@@ -20,6 +21,8 @@ private:
 
     Simulation sim;
     SimulationRenderer renderer;
+    LeftPanel leftPanel;
+    LeftPanelMode leftMode = LeftPanelMode::Simulation;
     GuiPanel gui;
 
     bool running = false;

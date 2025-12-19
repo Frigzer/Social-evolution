@@ -1,14 +1,17 @@
 #include "SimulationApp.hpp"
 
 SimulationApp::SimulationApp()
-    : window(sf::VideoMode({ 1100, 800 }), "Ewolucja zachowan spolecznych",
+    : window(sf::VideoMode({ WIN_W, WIN_H }), "Ewolucja zachowan spolecznych",
         sf::Style::Titlebar | sf::Style::Close),
-    sim(50, 50, { 3, 4, 0, 0.1 }),
+    sim(100, 100, { 3, 4, 0, 0.1 }),
     renderer(sim),
-    gui(sim, running)
+    gui(sim, running),
+    leftPanel(sim, renderer)
 {
     window.setFramerateLimit(30);
     ImGui::SFML::Init(window);
+
+    leftPanel.setSize({ LEFT_W, WIN_H });
 }
 
 SimulationApp::~SimulationApp() {
@@ -27,11 +30,13 @@ void SimulationApp::run() {
 
         ImGui::SFML::Update(window, deltaClock.restart());
 
-        gui.update(window);
+        gui.update(window, leftMode);
+        leftPanel.setMode(leftMode);
+
         if (running) sim.step();
 
         window.clear();
-        renderer.draw(window);
+        leftPanel.draw();
         ImGui::SFML::Render(window);
         window.display();
     }

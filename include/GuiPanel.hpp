@@ -3,11 +3,12 @@
 #include <imgui.h>
 #include "Simulation.hpp"
 
+
 class GuiPanel {
 public:
     GuiPanel(Simulation& sim, bool& running);
 
-    void update(sf::RenderWindow& win);
+    void update(sf::RenderWindow& window, LeftPanelMode& leftMode);
 
 private:
     Simulation& sim;

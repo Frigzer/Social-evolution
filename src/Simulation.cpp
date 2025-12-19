@@ -1,6 +1,7 @@
 #include "Simulation.hpp"
 #include <algorithm>
 #include <cmath>
+#include <fstream>
 
 Simulation::Simulation(int width, int height, PayoffMatrix m)
     : grid(width, height), matrix(m), rng(std::random_device{}()) {
@@ -305,6 +306,10 @@ void Simulation::step() {
         }
 
         generation++;
+
+        recordMetrics();
+        exportMetricsRowIfNeeded();
+
         return; // wa¿ne: koñczymy step() w tym trybie
     }
 
@@ -330,6 +335,9 @@ void Simulation::step() {
     }
 
     generation++;
+
+    recordMetrics();
+    exportMetricsRowIfNeeded();
 }
 
 float Simulation::cooperationRate() const {
@@ -340,4 +348,64 @@ float Simulation::cooperationRate() const {
         if (up->strategy == Strategy::Cooperate) coop++;
     }
     return (total == 0) ? 0.0f : (float)coop / (float)total;
+}
+
+void Simulation::recordMetrics() {
+    MetricsSample m;
+    m.generation = generation;
+
+    int alive = 0, empty = 0, coop = 0, defect = 0;
+    double sumC = 0.0, sumD = 0.0;
+
+    for (int y = 0; y < grid.height; ++y) {
+        for (int x = 0; x < grid.width; ++x) {
+            Agent* a = grid.get(x, y);
+            if (!a) { empty++; continue; }
+            if (!a->alive) { empty++; continue; } // w praktyce martwych nie ma na grid, ale bezpiecznie
+            alive++;
+
+            if (a->strategy == Strategy::Cooperate) {
+                coop++;
+                sumC += a->payoff;
+            }
+            else {
+                defect++;
+                sumD += a->payoff;
+            }
+        }
+    }
+
+    m.alive = alive;
+    m.empty = empty;
+    m.coop = coop;
+    m.defect = defect;
+    m.coopRatio = (alive > 0) ? (float)coop / (float)alive : 0.0f;
+    m.avgPayoffC = (coop > 0) ? (float)(sumC / (double)coop) : 0.0f;
+    m.avgPayoffD = (defect > 0) ? (float)(sumD / (double)defect) : 0.0f;
+
+    lastMetrics = m;
+    history.push_back(m);
+    while (history.size() > historyMax) history.pop_front();
+}
+
+void Simulation::exportMetricsRowIfNeeded() {
+    if (!exportCsvEnabled) return;
+
+    std::ofstream f(exportPath, std::ios::app);
+    if (!f) return;
+
+    if (!csvHeaderWritten) {
+        f << "generation,alive,empty,coop,defect,coopRatio,avgPayoffC,avgPayoffD\n";
+        csvHeaderWritten = true;
+    }
+
+    const auto& m = lastMetrics;
+    f << m.generation << ","
+        << m.alive << ","
+        << m.empty << ","
+        << m.coop << ","
+        << m.defect << ","
+        << m.coopRatio << ","
+        << m.avgPayoffC << ","
+        << m.avgPayoffD << "\n";
 }

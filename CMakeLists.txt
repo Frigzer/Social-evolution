@@ -49,6 +49,7 @@ target_sources(Social-evolution
         ${SOURCE_DIR}/Agent.cpp
         ${SOURCE_DIR}/Grid.cpp
         ${SOURCE_DIR}/GuiPanel.cpp
+        ${SOURCE_DIR}/LeftPanel.cpp
         ${SOURCE_DIR}/Simulation.cpp
         ${SOURCE_DIR}/SimulationApp.cpp
         ${SOURCE_DIR}/SimulationRenderer.cpp

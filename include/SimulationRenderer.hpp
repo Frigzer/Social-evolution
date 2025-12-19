@@ -6,7 +6,7 @@ class SimulationRenderer {
 public:
     SimulationRenderer(Simulation& s);
 
-    void draw(sf::RenderWindow& win);
+    void draw(sf::RenderTarget& target);
 
 private:
     Simulation& sim;

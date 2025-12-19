@@ -6,7 +6,7 @@ SimulationRenderer::SimulationRenderer(Simulation& s)
     cellSize = 800.0f / sim.grid.width;
 }
 
-void SimulationRenderer::draw(sf::RenderWindow& win) {
+void SimulationRenderer::draw(sf::RenderTarget& target) {
 
     sf::RectangleShape cell({ cellSize - 1.f, cellSize - 1.f });
 
@@ -20,7 +20,7 @@ void SimulationRenderer::draw(sf::RenderWindow& win) {
             else {
                 cell.setFillColor(a->getColor());
             }
-            win.draw(cell);
+            target.draw(cell);
         }
     }
 }
