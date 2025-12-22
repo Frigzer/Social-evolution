@@ -469,3 +469,11 @@ void Simulation::exportMetricsRowIfNeeded() {
         << m.avgPayoffTFT << ","
         << m.avgPayoffPavlov << "\n";
 }
+
+void Simulation::newCsvFile() {
+    std::ofstream f(exportPath, std::ios::trunc); // trunc usuwa zawartoœæ
+    if (f.is_open()) {
+        csvHeaderWritten = false; // Wymuszenie ponownego zapisu nag³ówka
+        f.close();
+    }
+}

@@ -96,4 +96,7 @@ public:
 
     void recordMetrics();
     void exportMetricsRowIfNeeded();
+
+    // Funkcja do czyszczenia pliku CSV
+    void newCsvFile();
 };

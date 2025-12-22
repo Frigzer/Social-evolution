@@ -86,5 +86,28 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
     if (ImGui::RadioButton("Metrics", leftMode == LeftPanelMode::Metrics))
         leftMode = LeftPanelMode::Metrics;
 
+
+    ImGui::Separator();
+    ImGui::Text("Eksport Danych (CSV)");
+
+    // 1. Checkbox do w³¹czania/wy³¹czania zapisu
+    // Jeœli zaznaczone, ka¿da generacja dopisuje wiersz do pliku
+    if (ImGui::Checkbox("Nagrywaj do pliku", &sim.exportCsvEnabled)) {
+        // Opcjonalnie: mo¿na tu dodaæ logikê, np. auto-start symulacji
+    }
+
+    // 2. Wyœwietlenie nazwy pliku (dla info)
+    ImGui::TextDisabled("Plik: %s", sim.exportPath.c_str());
+
+    // 3. Przycisk do resetowania pliku
+    if (ImGui::Button("Wyczysc / Nowy Plik")) {
+        sim.newCsvFile();
+    }
+
+    // Tooltip (dymek z podpowiedzi¹) dla przycisku
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Usuwa zawartosc metrics.csv i zaczyna zapis od nowa.");
+    }
+
     ImGui::End();
 }
