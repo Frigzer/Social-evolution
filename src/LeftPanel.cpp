@@ -43,10 +43,12 @@ void LeftPanel::drawSimulationView() {
     ImGui::Image(mapTexture.getTexture());
 }
 
+// Szablon pozwala przyj¹æ zarówno pole typu int, jak i float
+template <typename T>
 static void fillSeriesWindowed(const std::deque<MetricsSample>& hist,
     int window,
     std::vector<float>& out,
-    float MetricsSample::* field)
+    T MetricsSample::* field)
 {
     out.clear();
     if (hist.empty()) return;
@@ -56,54 +58,77 @@ static void fillSeriesWindowed(const std::deque<MetricsSample>& hist,
     out.reserve(n - start);
 
     for (int i = start; i < n; ++i) {
-        out.push_back(hist[i].*field);
+        // Pobieramy wartoœæ (int lub float) i rzutujemy na float,
+        // bo ImGui::PlotLines wymaga vector<float>
+        out.push_back(static_cast<float>(hist[i].*field));
     }
 }
 
 void LeftPanel::drawMetricsView() {
-    // Dodajemy margines dla treœci
+    // --- Dodaj wciêcia dla estetyki (zgodnie z poprzedni¹ napraw¹) ---
     ImGui::Indent(10.0f);
-    ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Odstêp od góry
+    ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
     const auto& m = sim.lastMetrics;
 
     ImGui::Text("Generation: %d", m.generation);
-    ImGui::Text("Alive: %d   Empty: %d", m.alive, m.empty);
-    ImGui::Text("Coop: %d   Defect: %d   Coop ratio: %.2f%%",
-        m.coop, m.defect, m.coopRatio * 100.f);
+    ImGui::Text("Population: %d", m.alive);
 
-    ImGui::Separator();
-
-    // „przesuwaj¹cy siê” wykres = pokazujemy ostatnie plotWindow próbek
-    static std::vector<float> coopSeries;
-    static std::vector<float> payC;
-    static std::vector<float> payD;
-
-    fillSeriesWindowed(sim.history, plotWindow, coopSeries, &MetricsSample::coopRatio);
-    fillSeriesWindowed(sim.history, plotWindow, payC, &MetricsSample::avgPayoffC);
-    fillSeriesWindowed(sim.history, plotWindow, payD, &MetricsSample::avgPayoffD);
-
-    ImGui::SliderInt("Plot window", &plotWindow, 100, 5000);
-
-    if (!coopSeries.empty()) {
-        ImGui::PlotLines("Cooperation (ratio)", coopSeries.data(), (int)coopSeries.size(),
-            0, nullptr, 0.0f, 1.0f, ImVec2(0, 160));
-    }
-    else {
-        ImGui::TextDisabled("No data yet (run the simulation).");
-    }
-
-    if (!payC.empty()) {
-        // auto-range: zostawiamy min/max jako FLT_MAX ¿eby ImGui próbowa³o dopasowaæ,
-        // ale czêsto lepiej policzyæ min/max. Na razie prosto:
-        ImGui::PlotLines("Avg payoff C", payC.data(), (int)payC.size(), 0, nullptr,
-            FLT_MAX, FLT_MAX, ImVec2(0, 140));
-        ImGui::PlotLines("Avg payoff D", payD.data(), (int)payD.size(), 0, nullptr,
-            FLT_MAX, FLT_MAX, ImVec2(0, 140));
+    // Prosty pasek postêpu pokazuj¹cy dominacjê
+    float total = (float)m.alive;
+    if (total > 0) {
+        ImGui::Text("Dominance:");
+        ImGui::SameLine();
+        // Malujemy tekst na kolory zwyciêzców
+        if (m.countPavlov > m.countTitForTat && m.countPavlov > m.countAlwaysD)
+            ImGui::TextColored(ImVec4(1, 1, 0, 1), "PAVLOV"); // ¯ó³ty
+        else if (m.countTitForTat > m.countPavlov)
+            ImGui::TextColored(ImVec4(0.2f, 0.4f, 1.0f, 1), "TFT"); // Niebieski
+        else
+            ImGui::Text("Mixed/Chaos");
     }
 
     ImGui::Separator();
-    ImGui::Text("Tip: Toggle view from the right menu. Simulation continues running.");
+
+    // Ustawienia wykresu
+    ImGui::SliderInt("History Size", &plotWindow, 100, 2000);
+
+    // --- PRZYGOTOWANIE DANYCH DO WYKRESÓW ---
+    static std::vector<float> popC, popD, popTFT, popPavlov;
+
+    // Helper fillSeriesWindowed masz zdefiniowany w tym pliku wczeœniej
+    fillSeriesWindowed(sim.history, plotWindow, popC, &MetricsSample::countAlwaysC);
+    fillSeriesWindowed(sim.history, plotWindow, popD, &MetricsSample::countAlwaysD);
+    fillSeriesWindowed(sim.history, plotWindow, popTFT, &MetricsSample::countTitForTat);
+    fillSeriesWindowed(sim.history, plotWindow, popPavlov, &MetricsSample::countPavlov);
+
+    // Aby wykresy mia³y tê sam¹ skalê Y, musimy znaæ max populacjê (zazwyczaj GRID_W * GRID_H)
+    float maxPop = (float)(sim.grid.width * sim.grid.height);
+
+    // --- WYKRES 1: ZIELONI (Always C) ---
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.2f, 1.0f, 0.2f, 1.0f)); // Zielony
+    ImGui::PlotLines("Always C", popC.data(), (int)popC.size(), 0, nullptr, 0.0f, maxPop, ImVec2(0, 40));
+    ImGui::PopStyleColor();
+
+    // --- WYKRES 2: CZERWONI (Always D) ---
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.0f, 0.2f, 0.2f, 1.0f)); // Czerwony
+    ImGui::PlotLines("Always D", popD.data(), (int)popD.size(), 0, nullptr, 0.0f, maxPop, ImVec2(0, 40));
+    ImGui::PopStyleColor();
+
+    // --- WYKRES 3: NIEBIESCY (Tit For Tat) ---
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.3f, 0.5f, 1.0f, 1.0f)); // Niebieski
+    ImGui::PlotLines("TitForTat", popTFT.data(), (int)popTFT.size(), 0, nullptr, 0.0f, maxPop, ImVec2(0, 40));
+    ImGui::PopStyleColor();
+
+    // --- WYKRES 4: ¯Ó£CI (Pavlov) ---
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.0f, 1.0f, 0.2f, 1.0f)); // ¯ó³ty
+    ImGui::PlotLines("Pavlov", popPavlov.data(), (int)popPavlov.size(), 0, nullptr, 0.0f, maxPop, ImVec2(0, 40));
+    ImGui::PopStyleColor();
+
+    ImGui::Separator();
+    ImGui::Text("Avg Payoff (Quality of Life):");
+    ImGui::Text("C: %.2f  D: %.2f", m.avgPayoffAlwaysC, m.avgPayoffAlwaysD);
+    ImGui::Text("TFT: %.2f  Pav: %.2f", m.avgPayoffTFT, m.avgPayoffPavlov);
 
     ImGui::Unindent(10.0f);
 }

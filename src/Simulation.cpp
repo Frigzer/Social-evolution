@@ -13,24 +13,29 @@ Simulation::Simulation(int width, int height, PayoffMatrix m)
         for (int x = 0; x < grid.width; ++x) {
             if (!place(rng)) continue;
 
-            auto a = std::make_unique<Agent>();
-            a->strategy = coop(rng) ? Strategy::Cooperate : Strategy::Defect;
-            a->payoff = 0.0f;
+            // LOSUJEMY TYP AGENTA
+            // Prosta dystrybucja: 25% szans na ka¿dy z 4 typów
+            std::uniform_int_distribution<int> typeDist(0, 3);
+            AgentType t = static_cast<AgentType>(typeDist(rng));
 
+            auto a = std::make_unique<Agent>(t);
+            // Konstruktor agenta ustawi domyœlne currentAction (zazwyczaj Cooperate)
+
+            a->payoff = 0.0f;
             grid.get(x, y) = a.get();
             agents.push_back(std::move(a));
         }
     }
 }
 
-float Simulation::payoffVs(Strategy a, Strategy b) const {
-    if (a == Strategy::Cooperate && b == Strategy::Cooperate) return matrix.R;
-    if (a == Strategy::Cooperate && b == Strategy::Defect)    return matrix.S;
-    if (a == Strategy::Defect && b == Strategy::Cooperate) return matrix.T;
+float Simulation::payoffVs(Action a, Action b) const {
+    if (a == Action::Cooperate && b == Action::Cooperate) return matrix.R;
+    if (a == Action::Cooperate && b == Action::Defect)    return matrix.S;
+    if (a == Action::Defect && b == Action::Cooperate) return matrix.T;
     return matrix.P;
 }
 
-float Simulation::expectedPayoffAt(int x, int y, Strategy s) const {
+float Simulation::expectedPayoffAt(int x, int y, Action s) const {
     float sum = 0.0f;
     int k = 0;
 
@@ -38,7 +43,7 @@ float Simulation::expectedPayoffAt(int x, int y, Strategy s) const {
     for (auto [nx, ny] : neigh) {
         const Agent* n = grid.get(nx, ny);
         if (!n) continue;
-        sum += payoffVs(s, n->strategy);
+        sum += payoffVs(s, n->currentAction);
         k++;
     }
 
@@ -55,6 +60,25 @@ float fitnessFromPayoff(float payoff, float beta) {
 
 void Simulation::step() {
     std::uniform_real_distribution<float> uni01(0.f, 1.f);
+
+    // =========================
+    // FAZA 0: DECYZJA (Mózg)
+    // =========================
+    for (int y = 0; y < grid.height; ++y) {
+        for (int x = 0; x < grid.width; ++x) {
+            Agent* a = grid.get(x, y);
+            if (!a) continue;
+
+            // Zbieramy s¹siadów do analizy
+            std::vector<const Agent*> neighbors;
+            auto coords = grid.getNeighborCoords(x, y);
+            for (auto [nx, ny] : coords) {
+                neighbors.push_back(grid.get(nx, ny));
+            }
+
+            a->decideNextAction(neighbors);
+        }
+    }
 
     // =========================
     // FAZA 1: RUCH (success-driven, r=1)
@@ -74,7 +98,7 @@ void Simulation::step() {
             if (uni01(rng) > moveProb) continue;
 
             // obecna "jakoœæ" miejsca
-            float current = expectedPayoffAt(x, y, a->strategy);
+            float current = expectedPayoffAt(x, y, a->currentAction);
 
             // sprawdŸ puste pola w s¹siedztwie r=1
             auto neigh = grid.getNeighborCoords(x, y);
@@ -85,7 +109,7 @@ void Simulation::step() {
             for (auto [nx, ny] : neigh) {
                 if (!grid.isEmpty(nx, ny)) continue;
 
-                float cand = expectedPayoffAt(nx, ny, a->strategy);
+                float cand = expectedPayoffAt(nx, ny, a->currentAction);
                 if (cand > bestVal) {
                     bestVal = cand;
                     bestX = nx;
@@ -123,7 +147,7 @@ void Simulation::step() {
                 Agent* n = grid.get(nx, ny);
                 if (!n) continue;
 
-                sum += payoffVs(a->strategy, n->strategy);
+                sum += payoffVs(a->currentAction, n->currentAction);
 
                 k++;
             }
@@ -142,7 +166,7 @@ void Simulation::step() {
     // =========================
     if (mode == EvolutionMode::Imitation) {
         // Zapisujemy decyzje dla agentów z pozycji (x,y). Puste pola ignorujemy.
-        std::vector<Strategy> nextStrategies(grid.width * grid.height);
+        std::vector<AgentType> nextTypes(grid.width* grid.height);
         std::vector<char> willUpdate(grid.width * grid.height, 0); // 1 jeœli pole mia³o agenta
 
         for (int y = 0; y < grid.height; ++y) {
@@ -162,7 +186,7 @@ void Simulation::step() {
                 }
 
                 if (neighAgents.empty()) {
-                    nextStrategies[y * grid.width + x] = a->strategy;
+                    nextTypes[y * grid.width + x] = a->type;
                     continue;
                 }
 
@@ -170,7 +194,7 @@ void Simulation::step() {
                     Agent* best = neighAgents[0];
                     for (auto* n : neighAgents)
                         if (n->payoff > best->payoff) best = n;
-                    nextStrategies[y * grid.width + x] = best->strategy;
+                    nextTypes[y * grid.width + x] = best->type;
                 }
                 else {
                     // Fermi: losowy s¹siad
@@ -181,7 +205,7 @@ void Simulation::step() {
                     float k = std::max(fermiK, 1e-6f);
                     float p = 1.0f / (1.0f + std::exp(-diff / k));
 
-                    nextStrategies[y * grid.width + x] = (uni01(rng) < p) ? b->strategy : a->strategy;
+                    nextTypes[y * grid.width + x] = (uni01(rng) < p) ? b->type : a->type;
                 }
             }
         }
@@ -197,12 +221,13 @@ void Simulation::step() {
                 // a->strategy = nextStrategies[y * grid.width + x];
 
                 // NOWY KOD (z obs³ug¹ wieku):
-                Strategy newStrat = nextStrategies[y * grid.width + x];
-                if (a->strategy == newStrat) {
+                AgentType newType = nextTypes[y * grid.width + x];
+                if (a->type == newType) {
                     a->strategyAge++; // Wierny strategii -> wiek roœnie
                 }
                 else {
-                    a->strategy = newStrat;
+                    a->type = newType;  // Zmieniamy osobowoœæ
+                    a->currentAction = Action::Cooperate;   // Resetujemy akcjê na "niewinn¹" (lub losow¹)
                     a->strategyAge = 0; // Zmiana pogl¹dów -> reset licznika
                 }
             }
@@ -280,17 +305,21 @@ void Simulation::step() {
 
                 child->alive = true;
                 child->payoff = 0.0f;
-                child->strategy = parent->strategy;
+                
+                // DZIEDZICZENIE:
+                child->type = parent->type;           // Dziecko dziedziczy geny rodzica
+                child->currentAction = Action::Cooperate; // Dziecko rodzi siê "czyste"
+                child->strategyAge = 0;
 
                 child->strategyAge = 0;
 
-                // mutacja potomka
+                // MUTACJA PRZY NARODZINACH (Zmiana Typu):
                 if (mutationRate > 0.0f) {
                     std::bernoulli_distribution mut(mutationRate);
                     if (mut(rng)) {
-                        child->strategy = (child->strategy == Strategy::Cooperate)
-                            ? Strategy::Defect
-                            : Strategy::Cooperate;
+                        // Losujemy zupe³nie nowy typ (mutacja genu)
+                        std::uniform_int_distribution<int> typeDist(0, 3);
+                        child->type = static_cast<AgentType>(typeDist(rng));
                     }
                 }
 
@@ -319,17 +348,19 @@ void Simulation::step() {
     // =========================
     if (mutationRate > 0.0f) {
         std::bernoulli_distribution mut(mutationRate);
+        std::uniform_int_distribution<int> typeDist(0, 3); // 4 typy strategii
+
         for (auto& up : agents) {
             Agent* a = up.get();
             // Pomijamy martwych (dla bezpieczeñstwa, choæ w Imitation wszyscy ¿yj¹)
             if (!a->alive) continue;
 
             if (mut(rng)) {
-                a->strategy = (a->strategy == Strategy::Cooperate)
-                    ? Strategy::Defect
-                    : Strategy::Cooperate;
+                // Mutacja zmienia osobowoœæ na losow¹ inn¹
+                a->type = static_cast<AgentType>(typeDist(rng));
 
-                a->strategyAge = 0; // Mutacja to nowa strategia -> reset
+                a->currentAction = Action::Cooperate; // Reset zachowania po mutacji
+                a->strategyAge = 0;
             }
         }
     }
@@ -345,7 +376,7 @@ float Simulation::cooperationRate() const {
     int total = 0;
     for (const auto& up : agents) {
         total++;
-        if (up->strategy == Strategy::Cooperate) coop++;
+        if (up->currentAction == Action::Cooperate) coop++;
     }
     return (total == 0) ? 0.0f : (float)coop / (float)total;
 }
@@ -354,34 +385,55 @@ void Simulation::recordMetrics() {
     MetricsSample m;
     m.generation = generation;
 
-    int alive = 0, empty = 0, coop = 0, defect = 0;
-    double sumC = 0.0, sumD = 0.0;
+    // Bufory do sumowania wyp³at dla konkretnych typów
+    double sumPayoffAlwaysC = 0.0;
+    double sumPayoffAlwaysD = 0.0;
+    double sumPayoffTFT = 0.0;
+    double sumPayoffPavlov = 0.0;
 
     for (int y = 0; y < grid.height; ++y) {
         for (int x = 0; x < grid.width; ++x) {
             Agent* a = grid.get(x, y);
-            if (!a) { empty++; continue; }
-            if (!a->alive) { empty++; continue; } // w praktyce martwych nie ma na grid, ale bezpiecznie
-            alive++;
 
-            if (a->strategy == Strategy::Cooperate) {
-                coop++;
-                sumC += a->payoff;
-            }
-            else {
-                defect++;
-                sumD += a->payoff;
+            // Pomijamy puste i martwe
+            if (!a) { m.empty++; continue; }
+            if (!a->alive) { m.empty++; continue; }
+
+            m.alive++;
+
+            // Zliczamy akcje (co robi¹)
+            if (a->currentAction == Action::Cooperate) m.coop++;
+            else m.defect++;
+
+            // Zliczamy typy (kim s¹) i ich wyp³aty
+            switch (a->type) {
+            case AgentType::AlwaysCooperate:
+                m.countAlwaysC++;
+                sumPayoffAlwaysC += a->payoff;
+                break;
+            case AgentType::AlwaysDefect:
+                m.countAlwaysD++;
+                sumPayoffAlwaysD += a->payoff;
+                break;
+            case AgentType::TitForTat:
+                m.countTitForTat++;
+                sumPayoffTFT += a->payoff;
+                break;
+            case AgentType::Pavlov:
+                m.countPavlov++;
+                sumPayoffPavlov += a->payoff;
+                break;
             }
         }
     }
 
-    m.alive = alive;
-    m.empty = empty;
-    m.coop = coop;
-    m.defect = defect;
-    m.coopRatio = (alive > 0) ? (float)coop / (float)alive : 0.0f;
-    m.avgPayoffC = (coop > 0) ? (float)(sumC / (double)coop) : 0.0f;
-    m.avgPayoffD = (defect > 0) ? (float)(sumD / (double)defect) : 0.0f;
+    m.coopRatio = (m.alive > 0) ? (float)m.coop / (float)m.alive : 0.0f;
+
+    // Obliczamy œrednie (zabezpieczenie przed dzieleniem przez zero)
+    m.avgPayoffAlwaysC = (m.countAlwaysC > 0) ? (float)(sumPayoffAlwaysC / m.countAlwaysC) : 0.0f;
+    m.avgPayoffAlwaysD = (m.countAlwaysD > 0) ? (float)(sumPayoffAlwaysD / m.countAlwaysD) : 0.0f;
+    m.avgPayoffTFT = (m.countTitForTat > 0) ? (float)(sumPayoffTFT / m.countTitForTat) : 0.0f;
+    m.avgPayoffPavlov = (m.countPavlov > 0) ? (float)(sumPayoffPavlov / m.countPavlov) : 0.0f;
 
     lastMetrics = m;
     history.push_back(m);
@@ -394,18 +446,26 @@ void Simulation::exportMetricsRowIfNeeded() {
     std::ofstream f(exportPath, std::ios::app);
     if (!f) return;
 
+    // Nag³ówek - musi pasowaæ do danych poni¿ej!
     if (!csvHeaderWritten) {
-        f << "generation,alive,empty,coop,defect,coopRatio,avgPayoffC,avgPayoffD\n";
+        f << "Generation,Alive,CoopRatio,"
+            << "Count_AlwaysC,Count_AlwaysD,Count_TFT,Count_Pavlov,"
+            << "Payoff_AlwaysC,Payoff_AlwaysD,Payoff_TFT,Payoff_Pavlov\n";
         csvHeaderWritten = true;
     }
 
     const auto& m = lastMetrics;
     f << m.generation << ","
         << m.alive << ","
-        << m.empty << ","
-        << m.coop << ","
-        << m.defect << ","
         << m.coopRatio << ","
-        << m.avgPayoffC << ","
-        << m.avgPayoffD << "\n";
+        // Liczebnoœæ populacji
+        << m.countAlwaysC << ","
+        << m.countAlwaysD << ","
+        << m.countTitForTat << ","
+        << m.countPavlov << ","
+        // Œrednie zarobki (jakoœæ ¿ycia)
+        << m.avgPayoffAlwaysC << ","
+        << m.avgPayoffAlwaysD << ","
+        << m.avgPayoffTFT << ","
+        << m.avgPayoffPavlov << "\n";
 }

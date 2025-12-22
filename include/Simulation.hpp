@@ -14,8 +14,8 @@ enum class UpdateRule {
 };
 
 enum class EvolutionMode {
-    Imitation,   // (Twoje Fermi/Best)
-    DeathBirth   // nowy tryb
+    Imitation,   // (Fermi/Best)
+    DeathBirth
 };
 
 enum class LeftPanelMode {
@@ -25,13 +25,25 @@ enum class LeftPanelMode {
 
 struct MetricsSample {
     int generation = 0;
+
+    // Liczebnoœæ
+    int countAlwaysC = 0;
+    int countAlwaysD = 0;
+    int countTitForTat = 0;
+    int countPavlov = 0;
+
+    // Œrednia wyp³ata dla ka¿dego typu ---
+    float avgPayoffAlwaysC = 0.0f;
+    float avgPayoffAlwaysD = 0.0f;
+    float avgPayoffTFT = 0.0f;
+    float avgPayoffPavlov = 0.0f;
+
+    // Ogólne
     int alive = 0;
     int empty = 0;
     int coop = 0;
     int defect = 0;
     float coopRatio = 0.0f;
-    float avgPayoffC = 0.0f;
-    float avgPayoffD = 0.0f;
 };
 
 class Simulation {
@@ -43,8 +55,8 @@ private:
 
     std::vector<Agent*> deadPool;
 
-    float expectedPayoffAt(int x, int y, Strategy s) const;
-    float payoffVs(Strategy a, Strategy b) const;
+    float expectedPayoffAt(int x, int y, Action s) const;
+    float payoffVs(Action a, Action b) const;
 
 public:
     Grid grid;
@@ -52,7 +64,7 @@ public:
 
     EvolutionMode mode = EvolutionMode::DeathBirth;
 
-    // parametry nowego modelu:
+    // parametry modelu:
     float density = 0.7f;     // % pól zajêtych
     float moveProb = 0.3f;    // szansa ruchu na pokolenie
 
@@ -64,9 +76,8 @@ public:
     // ruch "success-driven"
     float moveEpsilon = 0.05f; // minimalna poprawa, ¿eby op³aca³o siê ruszyæ
 
-    // nowe:
     UpdateRule updateRule = UpdateRule::Fermi;
-    float mutationRate = 0.001f;   // 0.5%
+    float mutationRate = 0.001f;   // 0.1%
     float fermiK = 0.1f;           // "temperatura selekcji"
 
     int generation = 0;
@@ -83,6 +94,6 @@ public:
     void step(); // jedna runda ewolucji
     float cooperationRate() const;
 
-    void recordMetrics();     // NOWE
-    void exportMetricsRowIfNeeded(); // NOWE
+    void recordMetrics();
+    void exportMetricsRowIfNeeded();
 };
