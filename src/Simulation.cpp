@@ -131,6 +131,7 @@ void Simulation::step() {
     // FAZA 2: PAYOFF
     // =========================
     for (auto& up : agents) {
+        up->lastPayoff = up->payoff;
         up->payoff = 0.0f;
     }
 
@@ -259,6 +260,8 @@ void Simulation::step() {
         for (int y = 0; y < grid.height; ++y) {
             for (int x = 0; x < grid.width; ++x) {
                 if (!grid.isEmpty(x, y)) continue;
+
+                if (uni01(rng) > reproductionProb) continue;
 
                 auto neigh = grid.getNeighborCoords(x, y);
 

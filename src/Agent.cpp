@@ -16,30 +16,57 @@ void Agent::decideNextAction(const std::vector<const Agent*>& neighbors) {
         break;
 
     case AgentType::TitForTat:
-        // Wersja przestrzenna: Jeœli chocia¿ jeden s¹siad mnie zdradzi³ -> mszczê siê.
-        // Lub wersja ³agodna: Jeœli wiêkszoœæ zdradza -> zdradzam.
+        // WERSJA PRZESTRZENNA:
+        // Skoro gram z 8 osobami naraz i mogê wybraæ tylko 1 ruch,
+        // muszê zdecydowaæ, co jest "bezpieczne".
     {
-        bool provoked = false;
+        int defectors = 0;
+        int total = 0;
         for (const auto* n : neighbors) {
-            if (n && n->lastAction == Action::Defect) {
-                provoked = true;
-                break;
+            if (!n) continue;
+            total++;
+            // Patrzê na s¹siada - jego 'currentAction' to jego ruch z POPRZEDNIEJ tury.
+            // To jest w³aœnie moja "pamiêæ".
+            if (n->currentAction == Action::Defect) {
+                defectors++;
             }
         }
-        // Pierwszy ruch (jeœli nie mam danych) zazwyczaj Wspó³praca
-        currentAction = provoked ? Action::Defect : Action::Cooperate;
+
+        // STRATEGIA: Jeœli nikt mnie nie atakuje -> Wspó³praca.
+        // Jeœli chocia¿ JEDEN (lub wiêcej) zdradza -> Odwet (Defect).
+        // Mo¿esz zmieniæ 'defectors > 0' na 'defectors > total/2' (³agodniejszy TFT).
+        if (total > 0 && defectors > 0) {
+            currentAction = Action::Defect;
+        }
+        else {
+            currentAction = Action::Cooperate;
+        }
     }
     break;
 
     case AgentType::Pavlov:
-        // Win-Stay, Lose-Shift:
-        // Jeœli zarobi³em du¿o (R lub T) -> powtarzam akcjê.
-        // Jeœli zarobi³em ma³o (S lub P) -> zmieniam akcjê.
-        // (Zak³adamy progi: np. 2.0 jako granica satysfakcji)
-        if (lastPayoff >= 2.0f) {
-            currentAction = lastAction; // Zostañ przy tym co dzia³a
+        // Win-Stay, Lose-Shift
+        // Jeœli zarobi³em du¿o (Wygra³em) -> Rób to samo.
+        // Jeœli zarobi³em ma³o (Przegra³em) -> Zmieñ strategiê.
+
+        // Próg satysfakcji. 
+        // R=3, T=3.x, P=0.1, S=0. 
+        // Œrednio, jeœli Pavlov wspó³pracuje z Pavlovami, ma 3.0.
+        // Jeœli zdradza naiwniaków, ma > 3.0.
+        // Jeœli jest oszukiwany, ma 0.0.
+        // Jeœli obaj zdradzaj¹, ma 0.1.
+        // Ustawmy próg na np. 2.0 lub 1.0 (zale¿y czy normalizujesz wyp³aty!).
+
+        // Zabezpieczenie: w 1 turze lastPayoff jest 0, wiêc Pavlov zacznie losowo/change.
+        // Mo¿emy uznaæ, ¿e 0.01 to minimum przetrwania.
+
+        float satisfactionThreshold = 0.01f; // Dostosuj do swojej macierzy!
+
+        if (lastPayoff > satisfactionThreshold) {
+            currentAction = lastAction; // STAY
         }
         else {
+            // SHIFT (Zmieñ na przeciwn¹)
             currentAction = (lastAction == Action::Cooperate) ? Action::Defect : Action::Cooperate;
         }
         break;

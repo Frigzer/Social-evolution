@@ -68,6 +68,7 @@ public:
     float density = 0.7f;     // % pól zajêtych
     float moveProb = 0.3f;    // szansa ruchu na pokolenie
 
+    float reproductionProb = 0.3f;
     float deathProb = 0.02f;      // szansa œmierci w pokoleniu
     float selectionBeta = 1.0f;   // si³a selekcji w reprodukcji (wiêksze => bardziej "wygrywa najlepszy")
 
