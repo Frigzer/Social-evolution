@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include <vector>
 #include "Agent.hpp"
 
@@ -10,8 +10,8 @@ enum class BoundaryMode {
 };
 
 enum class NeighborhoodType {
-    Moore,        // 8 s¹siadów
-    VonNeumann    // 4 s¹siadów
+    Moore,        // 8 sÄ…siadÃ³w
+    VonNeumann    // 4 sÄ…siadÃ³w
 };
 
 
