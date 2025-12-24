@@ -1,4 +1,4 @@
-#include "Grid.hpp"
+ï»¿#include "Grid.hpp"
 
 static int clampInt(int v, int lo, int hi) {
     if (v < lo) return lo;
@@ -46,7 +46,7 @@ int Grid::mapX(int x) const {
     case BoundaryMode::Clamp:   return clampInt(x, 0, width - 1);
     case BoundaryMode::Reflect: return reflectIndex(x, width);
     case BoundaryMode::Absorbing:
-        // dla Absorbing mapX/mapY nie s¹ u¿ywane (obs³ugujemy to w getNeighborCoords)
+        // dla Absorbing mapX/mapY nie sÄ… uÅ¼ywane (obsÅ‚ugujemy to w getNeighborCoords)
         return x;
     }
     return modWrap(x, width);
