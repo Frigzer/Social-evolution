@@ -1,10 +1,10 @@
-#include "Agent.hpp"
+ï»¿#include "Agent.hpp"
 
 Agent::Agent(AgentType t)
     : type(t), currentAction(Action::Cooperate), lastAction(Action::Cooperate) {}
 
 void Agent::decideNextAction(const std::vector<const Agent*>& neighbors) {
-    lastAction = currentAction; // Zapamiêtaj co zrobi³eœ
+    lastAction = currentAction; // ZapamiÄ™taj co zrobiÅ‚eÅ›
 
     switch (type) {
     case AgentType::AlwaysCooperate:
@@ -17,24 +17,24 @@ void Agent::decideNextAction(const std::vector<const Agent*>& neighbors) {
 
     case AgentType::TitForTat:
         // WERSJA PRZESTRZENNA:
-        // Skoro gram z 8 osobami naraz i mogê wybraæ tylko 1 ruch,
-        // muszê zdecydowaæ, co jest "bezpieczne".
+        // Skoro gram z 8 osobami naraz i mogÄ™ wybraÄ‡ tylko 1 ruch,
+        // muszÄ™ zdecydowaÄ‡, co jest "bezpieczne".
     {
         int defectors = 0;
         int total = 0;
         for (const auto* n : neighbors) {
             if (!n) continue;
             total++;
-            // Patrzê na s¹siada - jego 'currentAction' to jego ruch z POPRZEDNIEJ tury.
-            // To jest w³aœnie moja "pamiêæ".
+            // PatrzÄ™ na sÄ…siada - jego 'currentAction' to jego ruch z POPRZEDNIEJ tury.
+            // To jest wÅ‚aÅ›nie moja "pamiÄ™Ä‡".
             if (n->currentAction == Action::Defect) {
                 defectors++;
             }
         }
 
-        // STRATEGIA: Jeœli nikt mnie nie atakuje -> Wspó³praca.
-        // Jeœli chocia¿ JEDEN (lub wiêcej) zdradza -> Odwet (Defect).
-        // Mo¿esz zmieniæ 'defectors > 0' na 'defectors > total/2' (³agodniejszy TFT).
+        // STRATEGIA: JeÅ›li nikt mnie nie atakuje -> WspÃ³Å‚praca.
+        // JeÅ›li chociaÅ¼ JEDEN (lub wiÄ™cej) zdradza -> Odwet (Defect).
+        // MoÅ¼esz zmieniÄ‡ 'defectors > 0' na 'defectors > total/2' (Å‚agodniejszy TFT).
         if (total > 0 && defectors > 0) {
             currentAction = Action::Defect;
         }
@@ -46,19 +46,19 @@ void Agent::decideNextAction(const std::vector<const Agent*>& neighbors) {
 
     case AgentType::Pavlov:
         // Win-Stay, Lose-Shift
-        // Jeœli zarobi³em du¿o (Wygra³em) -> Rób to samo.
-        // Jeœli zarobi³em ma³o (Przegra³em) -> Zmieñ strategiê.
+        // JeÅ›li zarobiÅ‚em duÅ¼o (WygraÅ‚em) -> RÃ³b to samo.
+        // JeÅ›li zarobiÅ‚em maÅ‚o (PrzegraÅ‚em) -> ZmieÅ„ strategiÄ™.
 
-        // Próg satysfakcji. 
+        // PrÃ³g satysfakcji. 
         // R=3, T=3.x, P=0.1, S=0. 
-        // Œrednio, jeœli Pavlov wspó³pracuje z Pavlovami, ma 3.0.
-        // Jeœli zdradza naiwniaków, ma > 3.0.
-        // Jeœli jest oszukiwany, ma 0.0.
-        // Jeœli obaj zdradzaj¹, ma 0.1.
-        // Ustawmy próg na np. 2.0 lub 1.0 (zale¿y czy normalizujesz wyp³aty!).
+        // Åšrednio, jeÅ›li Pavlov wspÃ³Å‚pracuje z Pavlovami, ma 3.0.
+        // JeÅ›li zdradza naiwniakÃ³w, ma > 3.0.
+        // JeÅ›li jest oszukiwany, ma 0.0.
+        // JeÅ›li obaj zdradzajÄ…, ma 0.1.
+        // Ustawmy prÃ³g na np. 2.0 lub 1.0 (zaleÅ¼y czy normalizujesz wypÅ‚aty!).
 
-        // Zabezpieczenie: w 1 turze lastPayoff jest 0, wiêc Pavlov zacznie losowo/change.
-        // Mo¿emy uznaæ, ¿e 0.01 to minimum przetrwania.
+        // Zabezpieczenie: w 1 turze lastPayoff jest 0, wiÄ™c Pavlov zacznie losowo/change.
+        // MoÅ¼emy uznaÄ‡, Å¼e 0.01 to minimum przetrwania.
 
         float satisfactionThreshold = 0.01f; // Dostosuj do swojej macierzy!
 
@@ -66,7 +66,7 @@ void Agent::decideNextAction(const std::vector<const Agent*>& neighbors) {
             currentAction = lastAction; // STAY
         }
         else {
-            // SHIFT (Zmieñ na przeciwn¹)
+            // SHIFT (ZmieÅ„ na przeciwnÄ…)
             currentAction = (lastAction == Action::Cooperate) ? Action::Defect : Action::Cooperate;
         }
         break;
@@ -74,7 +74,7 @@ void Agent::decideNextAction(const std::vector<const Agent*>& neighbors) {
 }
 
 sf::Color Agent::getColor() const {
-    // Wizualizacja: Chcemy widzieæ TYPY, ¿eby zobaczyæ kto wygrywa ewolucjê.
+    // Wizualizacja: Chcemy widzieÄ‡ TYPY, Å¼eby zobaczyÄ‡ kto wygrywa ewolucjÄ™.
 
     // Altruista = Zielony
     if (type == AgentType::AlwaysCooperate) return sf::Color(50, 255, 50);
@@ -85,7 +85,7 @@ sf::Color Agent::getColor() const {
     // Wet za Wet = Niebieski (Policjant)
     if (type == AgentType::TitForTat) return sf::Color(50, 100, 255);
 
-    // Pavlov = ¯ó³ty/Z³oty (Elastyczny)
+    // Pavlov = Å»Ã³Å‚ty/ZÅ‚oty (Elastyczny)
     if (type == AgentType::Pavlov) return sf::Color(255, 255, 50);
 
     return sf::Color::White;
