@@ -1,4 +1,4 @@
-#pragma once
+Ôªø#pragma once
 #include <SFML/Graphics.hpp>
 #include <imgui.h>
 #include <imgui-SFML.h>
@@ -15,7 +15,7 @@ public:
     void setMode(LeftPanelMode m);
     LeftPanelMode getMode() const;
 
-    // rysuje lewy panel (ImGui okno bez ramek) i zawartoúÊ
+    // rysuje lewy panel (ImGui okno bez ramek) i zawarto≈õƒá
     void draw();
 
 private:
@@ -26,10 +26,10 @@ private:
 
     sf::RenderTexture mapTexture;
 
-    // helpery do wykresÛw (bufory robocze)
+    // helpery do wykres√≥w (bufory robocze)
     void drawSimulationView();
     void drawMetricsView();
 
-    // dla Ñprzesuwajπcego siÍ wykresuî:
-    int plotWindow = 600; // ile ostatnich prÛbek pokazujemy
+    // dla ‚ÄûprzesuwajƒÖcego siƒô wykresu‚Äù:
+    int plotWindow = 600; // ile ostatnich pr√≥bek pokazujemy
 };
