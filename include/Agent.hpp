@@ -1,10 +1,10 @@
-#pragma once
+ï»¿#pragma once
 #include <SFML/Graphics.hpp>
 
 // To jest "Akcja" w danej turze
 enum class Action { Cooperate, Defect };
 
-// To jest "Osobowoœæ" (Strategia ¿yciowa)
+// To jest "OsobowoÅ›Ä‡" (Strategia Å¼yciowa)
 enum class AgentType {
     AlwaysCooperate, // Naiwny Altruista (Zawsze C)
     AlwaysDefect,    // Egoista (Zawsze D)
@@ -14,19 +14,19 @@ enum class AgentType {
 
 class Agent {
 public:
-    AgentType type;          // Sta³a cecha (ewoluuje przez imitacjê)
-    Action currentAction;    // Zmienna (zale¿y od sytuacji)
-    Action lastAction;       // Pamiêæ: co zrobi³em w poprzedniej turze?
+    AgentType type;          // StaÅ‚a cecha (ewoluuje przez imitacjÄ™)
+    Action currentAction;    // Zmienna (zaleÅ¼y od sytuacji)
+    Action lastAction;       // PamiÄ™Ä‡: co zrobiÅ‚em w poprzedniej turze?
 
     float payoff = 0.0f;
-    float lastPayoff = 0.0f; // Pamiêæ: ile zarobi³em w poprzedniej turze?
+    float lastPayoff = 0.0f; // PamiÄ™Ä‡: ile zarobiÅ‚em w poprzedniej turze?
     bool alive = true;
     int strategyAge = 0;
 
-    // Konstruktor domyœlnie tworzy losowego agenta lub konkretnego typu
+    // Konstruktor domyÅ›lnie tworzy losowego agenta lub konkretnego typu
     Agent(AgentType t = AgentType::AlwaysCooperate);
 
-    // Funkcja decyduj¹ca o akcji na podstawie otoczenia/pamiêci
+    // Funkcja decydujÄ…ca o akcji na podstawie otoczenia/pamiÄ™ci
     void decideNextAction(const std::vector<const Agent*>& neighbors);
 
     sf::Color getColor() const;
