@@ -1,13 +1,13 @@
-#pragma once
+ï»¿#pragma once
 
 // Ustawienia Symulacji (Logika)
-static constexpr int GRID_WIDTH = 100; // Domyœlna szerokoœæ siatki
-static constexpr int GRID_HEIGHT = 100; // Domyœlna wysokoœæ siatki
+static constexpr int GRID_WIDTH = 100; // DomyÅ›lna szerokoÅ›Ä‡ siatki
+static constexpr int GRID_HEIGHT = 100; // DomyÅ›lna wysokoÅ›Ä‡ siatki
 
-// Ustawienia Okna i GUI (Wygl¹d)
-static constexpr int LEFT_PANEL_WIDTH = 850;  // Szerokoœæ obszaru symulacji/wykresów
-static constexpr int RIGHT_PANEL_WIDTH = 400; // Szerokoœæ panelu sterowania (ImGui)
-static constexpr int WINDOW_HEIGHT = 850;      // Wysokoœæ ca³ego okna
+// Ustawienia Okna i GUI (WyglÄ…d)
+static constexpr int LEFT_PANEL_WIDTH = 850;  // SzerokoÅ›Ä‡ obszaru symulacji/wykresÃ³w
+static constexpr int RIGHT_PANEL_WIDTH = 400; // SzerokoÅ›Ä‡ panelu sterowania (ImGui)
+static constexpr int WINDOW_HEIGHT = 850;      // WysokoÅ›Ä‡ caÅ‚ego okna
 
-// Automatyczne wyliczanie szerokoœci ca³ego okna
+// Automatyczne wyliczanie szerokoÅ›ci caÅ‚ego okna
 static constexpr int WINDOW_WIDTH = LEFT_PANEL_WIDTH + RIGHT_PANEL_WIDTH;
