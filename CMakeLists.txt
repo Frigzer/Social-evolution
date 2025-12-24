@@ -67,3 +67,7 @@ target_link_libraries(Social-evolution
         sfml-system
         ImGui-SFML
 )
+
+if (MSVC)
+    target_compile_options(Social-evolution PRIVATE /utf-8)
+endif()
