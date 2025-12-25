@@ -1,4 +1,4 @@
-﻿#define NOMINMAX
+#define NOMINMAX
 #include <Windows.h>
 #include "SimulationApp.hpp"
 
