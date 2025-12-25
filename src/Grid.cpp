@@ -1,4 +1,4 @@
-﻿#include "Grid.hpp"
+#include "Grid.hpp"
 
 static int clampInt(int v, int lo, int hi) {
     if (v < lo) return lo;
