@@ -15,7 +15,7 @@ void LeftPanel::setMode(LeftPanelMode m) { mode = m; }
 LeftPanelMode LeftPanel::getMode() const { return mode; }
 
 void LeftPanel::draw() {
-    // Lewy panel: sta≥y rozmiar, bez titlebara
+    // Lewy panel: sta≈Çy rozmiar, bez titlebara
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2((float)LEFT_PANEL_WIDTH, (float)WINDOW_HEIGHT), ImGuiCond_Always);
 
@@ -43,7 +43,7 @@ void LeftPanel::drawSimulationView() {
     ImGui::Image(mapTexture.getTexture());
 }
 
-// Szablon pozwala przyjπÊ zarÛwno pole typu int, jak i float
+// Szablon pozwala przyjƒÖƒá zar√≥wno pole typu int, jak i float
 template <typename T>
 static void fillSeriesWindowed(const std::deque<MetricsSample>& hist,
     int window,
@@ -58,14 +58,14 @@ static void fillSeriesWindowed(const std::deque<MetricsSample>& hist,
     out.reserve(n - start);
 
     for (int i = start; i < n; ++i) {
-        // Pobieramy wartoúÊ (int lub float) i rzutujemy na float,
+        // Pobieramy warto≈õƒá (int lub float) i rzutujemy na float,
         // bo ImGui::PlotLines wymaga vector<float>
         out.push_back(static_cast<float>(hist[i].*field));
     }
 }
 
 void LeftPanel::drawMetricsView() {
-    // --- Dodaj wciÍcia dla estetyki (zgodnie z poprzedniπ naprawπ) ---
+    // --- Dodaj wciƒôcia dla estetyki (zgodnie z poprzedniƒÖ naprawƒÖ) ---
     ImGui::Indent(10.0f);
     ImGui::Dummy(ImVec2(0.0f, 5.0f));
 
@@ -74,14 +74,14 @@ void LeftPanel::drawMetricsView() {
     ImGui::Text("Generation: %d", m.generation);
     ImGui::Text("Population: %d", m.alive);
 
-    // Prosty pasek postÍpu pokazujπcy dominacjÍ
+    // Prosty pasek postƒôpu pokazujƒÖcy dominacjƒô
     float total = (float)m.alive;
     if (total > 0) {
         ImGui::Text("Dominance:");
         ImGui::SameLine();
-        // Malujemy tekst na kolory zwyciÍzcÛw
+        // Malujemy tekst na kolory zwyciƒôzc√≥w
         if (m.countPavlov > m.countTitForTat && m.countPavlov > m.countAlwaysD)
-            ImGui::TextColored(ImVec4(1, 1, 0, 1), "PAVLOV"); // ØÛ≥ty
+            ImGui::TextColored(ImVec4(1, 1, 0, 1), "PAVLOV"); // ≈ª√≥≈Çty
         else if (m.countTitForTat > m.countPavlov)
             ImGui::TextColored(ImVec4(0.2f, 0.4f, 1.0f, 1), "TFT"); // Niebieski
         else
@@ -93,16 +93,16 @@ void LeftPanel::drawMetricsView() {
     // Ustawienia wykresu
     ImGui::SliderInt("History Size", &plotWindow, 100, 2000);
 
-    // --- PRZYGOTOWANIE DANYCH DO WYKRES”W ---
+    // --- PRZYGOTOWANIE DANYCH DO WYKRES√ìW ---
     static std::vector<float> popC, popD, popTFT, popPavlov;
 
-    // Helper fillSeriesWindowed masz zdefiniowany w tym pliku wczeúniej
+    // Helper fillSeriesWindowed masz zdefiniowany w tym pliku wcze≈õniej
     fillSeriesWindowed(sim.history, plotWindow, popC, &MetricsSample::countAlwaysC);
     fillSeriesWindowed(sim.history, plotWindow, popD, &MetricsSample::countAlwaysD);
     fillSeriesWindowed(sim.history, plotWindow, popTFT, &MetricsSample::countTitForTat);
     fillSeriesWindowed(sim.history, plotWindow, popPavlov, &MetricsSample::countPavlov);
 
-    // Aby wykresy mia≥y tÍ samπ skalÍ Y, musimy znaÊ max populacjÍ (zazwyczaj GRID_W * GRID_H)
+    // Aby wykresy mia≈Çy tƒô samƒÖ skalƒô Y, musimy znaƒá max populacjƒô (zazwyczaj GRID_W * GRID_H)
     float maxPop = (float)(sim.grid.width * sim.grid.height);
 
     // --- WYKRES 1: ZIELONI (Always C) ---
@@ -120,8 +120,8 @@ void LeftPanel::drawMetricsView() {
     ImGui::PlotLines("TitForTat", popTFT.data(), (int)popTFT.size(), 0, nullptr, 0.0f, maxPop, ImVec2(0, 40));
     ImGui::PopStyleColor();
 
-    // --- WYKRES 4: Ø”£CI (Pavlov) ---
-    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.0f, 1.0f, 0.2f, 1.0f)); // ØÛ≥ty
+    // --- WYKRES 4: ≈ª√ì≈ÅCI (Pavlov) ---
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.0f, 1.0f, 0.2f, 1.0f)); // ≈ª√≥≈Çty
     ImGui::PlotLines("Pavlov", popPavlov.data(), (int)popPavlov.size(), 0, nullptr, 0.0f, maxPop, ImVec2(0, 40));
     ImGui::PopStyleColor();
 
