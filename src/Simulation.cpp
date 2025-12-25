@@ -14,12 +14,12 @@ Simulation::Simulation(int width, int height, PayoffMatrix m)
             if (!place(rng)) continue;
 
             // LOSUJEMY TYP AGENTA
-            // Prosta dystrybucja: 25% szans na kaødy z 4 typÛw
+            // Prosta dystrybucja: 25% szans na ka≈ºdy z 4 typ√≥w
             std::uniform_int_distribution<int> typeDist(0, 3);
             AgentType t = static_cast<AgentType>(typeDist(rng));
 
             auto a = std::make_unique<Agent>(t);
-            // Konstruktor agenta ustawi domyúlne currentAction (zazwyczaj Cooperate)
+            // Konstruktor agenta ustawi domy≈õlne currentAction (zazwyczaj Cooperate)
 
             a->payoff = 0.0f;
             grid.get(x, y) = a.get();
@@ -54,7 +54,7 @@ float Simulation::expectedPayoffAt(int x, int y, Action s) const {
 }
 
 float fitnessFromPayoff(float payoff, float beta) {
-    // zawsze dodatnie wagi; beta=0 => losowy wybÛr rodzica
+    // zawsze dodatnie wagi; beta=0 => losowy wyb√≥r rodzica
     return std::exp(beta * payoff);
 }
 
@@ -62,14 +62,14 @@ void Simulation::step() {
     std::uniform_real_distribution<float> uni01(0.f, 1.f);
 
     // =========================
-    // FAZA 0: DECYZJA (MÛzg)
+    // FAZA 0: DECYZJA (M√≥zg)
     // =========================
     for (int y = 0; y < grid.height; ++y) {
         for (int x = 0; x < grid.width; ++x) {
             Agent* a = grid.get(x, y);
             if (!a) continue;
 
-            // Zbieramy sπsiadÛw do analizy
+            // Zbieramy sƒÖsiad√≥w do analizy
             std::vector<const Agent*> neighbors;
             auto coords = grid.getNeighborCoords(x, y);
             for (auto [nx, ny] : coords) {
@@ -97,10 +97,10 @@ void Simulation::step() {
             if (!a) continue;
             if (uni01(rng) > moveProb) continue;
 
-            // obecna "jakoúÊ" miejsca
+            // obecna "jako≈õƒá" miejsca
             float current = expectedPayoffAt(x, y, a->currentAction);
 
-            // sprawdü puste pola w sπsiedztwie r=1
+            // sprawd≈∫ puste pola w sƒÖsiedztwie r=1
             auto neigh = grid.getNeighborCoords(x, y);
 
             float bestVal = current;
@@ -117,7 +117,7 @@ void Simulation::step() {
                 }
             }
 
-            // przesuÒ siÍ tylko, jeúli realnie lepiej (epsilon)
+            // przesu≈Ñ siƒô tylko, je≈õli realnie lepiej (epsilon)
             if (bestX != x || bestY != y) {
                 if (bestVal >= current + moveEpsilon) {
                     grid.get(bestX, bestY) = a;
@@ -166,9 +166,9 @@ void Simulation::step() {
     // FAZA 3: UPDATE STRATEGII (synchronicznie)
     // =========================
     if (mode == EvolutionMode::Imitation) {
-        // Zapisujemy decyzje dla agentÛw z pozycji (x,y). Puste pola ignorujemy.
+        // Zapisujemy decyzje dla agent√≥w z pozycji (x,y). Puste pola ignorujemy.
         std::vector<AgentType> nextTypes(grid.width* grid.height);
-        std::vector<char> willUpdate(grid.width * grid.height, 0); // 1 jeúli pole mia≥o agenta
+        std::vector<char> willUpdate(grid.width * grid.height, 0); // 1 je≈õli pole mia≈Ço agenta
 
         for (int y = 0; y < grid.height; ++y) {
             for (int x = 0; x < grid.width; ++x) {
@@ -177,7 +177,7 @@ void Simulation::step() {
 
                 willUpdate[y * grid.width + x] = 1;
 
-                // zbierz sπsiadÛw-agentÛw
+                // zbierz sƒÖsiad√≥w-agent√≥w
                 std::vector<Agent*> neighAgents;
                 auto neigh = grid.getNeighborCoords(x, y);
                 neighAgents.reserve(neigh.size());
@@ -198,7 +198,7 @@ void Simulation::step() {
                     nextTypes[y * grid.width + x] = best->type;
                 }
                 else {
-                    // Fermi: losowy sπsiad
+                    // Fermi: losowy sƒÖsiad
                     std::uniform_int_distribution<int> pick(0, (int)neighAgents.size() - 1);
                     Agent* b = neighAgents[pick(rng)];
 
@@ -216,32 +216,32 @@ void Simulation::step() {
             for (int x = 0; x < grid.width; ++x) {
                 if (!willUpdate[y * grid.width + x]) continue;
                 Agent* a = grid.get(x, y);
-                if (!a) continue; // teoretycznie nie powinno siÍ zdarzyÊ, ale bezpiecznie
+                if (!a) continue; // teoretycznie nie powinno siƒô zdarzyƒá, ale bezpiecznie
 
                 // STARY KOD:
                 // a->strategy = nextStrategies[y * grid.width + x];
 
-                // NOWY KOD (z obs≥ugπ wieku):
+                // NOWY KOD (z obs≈ÇugƒÖ wieku):
                 AgentType newType = nextTypes[y * grid.width + x];
                 if (a->type == newType) {
-                    a->strategyAge++; // Wierny strategii -> wiek roúnie
+                    a->strategyAge++; // Wierny strategii -> wiek ro≈õnie
                 }
                 else {
-                    a->type = newType;  // Zmieniamy osobowoúÊ
-                    a->currentAction = Action::Cooperate;   // Resetujemy akcjÍ na "niewinnπ" (lub losowπ)
-                    a->strategyAge = 0; // Zmiana poglπdÛw -> reset licznika
+                    a->type = newType;  // Zmieniamy osobowo≈õƒá
+                    a->currentAction = Action::Cooperate;   // Resetujemy akcjƒô na "niewinnƒÖ" (lub losowƒÖ)
+                    a->strategyAge = 0; // Zmiana poglƒÖd√≥w -> reset licznika
                 }
             }
         }
     }
 
     // =========================
-    // FAZA 3: DEATHñBIRTH
+    // FAZA 3: DEATH‚ÄìBIRTH
     // =========================
     if (mode == EvolutionMode::DeathBirth) {
         std::uniform_real_distribution<float> uni01(0.f, 1.f);
 
-        // 1) DEATH: losowo zabijamy agentÛw
+        // 1) DEATH: losowo zabijamy agent√≥w
         for (int y = 0; y < grid.height; ++y) {
             for (int x = 0; x < grid.width; ++x) {
                 Agent* a = grid.get(x, y);
@@ -255,7 +255,7 @@ void Simulation::step() {
             }
         }
 
-        // 2) BIRTH: kaøde puste pole moøe zostaÊ zasiedlone przez sπsiada
+        // 2) BIRTH: ka≈ºde puste pole mo≈ºe zostaƒá zasiedlone przez sƒÖsiada
         // (selekcja proporcjonalna do fitness = exp(beta * payoff))
         for (int y = 0; y < grid.height; ++y) {
             for (int x = 0; x < grid.width; ++x) {
@@ -265,7 +265,7 @@ void Simulation::step() {
 
                 auto neigh = grid.getNeighborCoords(x, y);
 
-                // zbierz kandydatÛw (øywi sπsiedzi)
+                // zbierz kandydat√≥w (≈ºywi sƒÖsiedzi)
                 std::vector<Agent*> parents;
                 parents.reserve(neigh.size());
                 for (auto [nx, ny] : neigh) {
@@ -311,7 +311,7 @@ void Simulation::step() {
                 
                 // DZIEDZICZENIE:
                 child->type = parent->type;           // Dziecko dziedziczy geny rodzica
-                child->currentAction = Action::Cooperate; // Dziecko rodzi siÍ "czyste"
+                child->currentAction = Action::Cooperate; // Dziecko rodzi siƒô "czyste"
                 child->strategyAge = 0;
 
                 child->strategyAge = 0;
@@ -320,7 +320,7 @@ void Simulation::step() {
                 if (mutationRate > 0.0f) {
                     std::bernoulli_distribution mut(mutationRate);
                     if (mut(rng)) {
-                        // Losujemy zupe≥nie nowy typ (mutacja genu)
+                        // Losujemy zupe≈Çnie nowy typ (mutacja genu)
                         std::uniform_int_distribution<int> typeDist(0, 3);
                         child->type = static_cast<AgentType>(typeDist(rng));
                     }
@@ -330,7 +330,7 @@ void Simulation::step() {
             }
         }
 
-        // Postarzanie ocala≥ych
+        // Postarzanie ocala≈Çych
         for (auto& ag : agents) {
             if (ag->alive) {
                 ag->strategyAge++;
@@ -342,7 +342,7 @@ void Simulation::step() {
         recordMetrics();
         exportMetricsRowIfNeeded();
 
-        return; // waøne: koÒczymy step() w tym trybie
+        return; // wa≈ºne: ko≈Ñczymy step() w tym trybie
     }
 
 
@@ -355,11 +355,11 @@ void Simulation::step() {
 
         for (auto& up : agents) {
             Agent* a = up.get();
-            // Pomijamy martwych (dla bezpieczeÒstwa, choÊ w Imitation wszyscy øyjπ)
+            // Pomijamy martwych (dla bezpiecze≈Ñstwa, choƒá w Imitation wszyscy ≈ºyjƒÖ)
             if (!a->alive) continue;
 
             if (mut(rng)) {
-                // Mutacja zmienia osobowoúÊ na losowπ innπ
+                // Mutacja zmienia osobowo≈õƒá na losowƒÖ innƒÖ
                 a->type = static_cast<AgentType>(typeDist(rng));
 
                 a->currentAction = Action::Cooperate; // Reset zachowania po mutacji
@@ -388,7 +388,7 @@ void Simulation::recordMetrics() {
     MetricsSample m;
     m.generation = generation;
 
-    // Bufory do sumowania wyp≥at dla konkretnych typÛw
+    // Bufory do sumowania wyp≈Çat dla konkretnych typ√≥w
     double sumPayoffAlwaysC = 0.0;
     double sumPayoffAlwaysD = 0.0;
     double sumPayoffTFT = 0.0;
@@ -404,11 +404,11 @@ void Simulation::recordMetrics() {
 
             m.alive++;
 
-            // Zliczamy akcje (co robiπ)
+            // Zliczamy akcje (co robiƒÖ)
             if (a->currentAction == Action::Cooperate) m.coop++;
             else m.defect++;
 
-            // Zliczamy typy (kim sπ) i ich wyp≥aty
+            // Zliczamy typy (kim sƒÖ) i ich wyp≈Çaty
             switch (a->type) {
             case AgentType::AlwaysCooperate:
                 m.countAlwaysC++;
@@ -432,7 +432,7 @@ void Simulation::recordMetrics() {
 
     m.coopRatio = (m.alive > 0) ? (float)m.coop / (float)m.alive : 0.0f;
 
-    // Obliczamy úrednie (zabezpieczenie przed dzieleniem przez zero)
+    // Obliczamy ≈õrednie (zabezpieczenie przed dzieleniem przez zero)
     m.avgPayoffAlwaysC = (m.countAlwaysC > 0) ? (float)(sumPayoffAlwaysC / m.countAlwaysC) : 0.0f;
     m.avgPayoffAlwaysD = (m.countAlwaysD > 0) ? (float)(sumPayoffAlwaysD / m.countAlwaysD) : 0.0f;
     m.avgPayoffTFT = (m.countTitForTat > 0) ? (float)(sumPayoffTFT / m.countTitForTat) : 0.0f;
@@ -449,7 +449,7 @@ void Simulation::exportMetricsRowIfNeeded() {
     std::ofstream f(exportPath, std::ios::app);
     if (!f) return;
 
-    // Nag≥Ûwek - musi pasowaÊ do danych poniøej!
+    // Nag≈Ç√≥wek - musi pasowaƒá do danych poni≈ºej!
     if (!csvHeaderWritten) {
         f << "Generation,Alive,CoopRatio,"
             << "Count_AlwaysC,Count_AlwaysD,Count_TFT,Count_Pavlov,"
@@ -461,12 +461,12 @@ void Simulation::exportMetricsRowIfNeeded() {
     f << m.generation << ","
         << m.alive << ","
         << m.coopRatio << ","
-        // LiczebnoúÊ populacji
+        // Liczebno≈õƒá populacji
         << m.countAlwaysC << ","
         << m.countAlwaysD << ","
         << m.countTitForTat << ","
         << m.countPavlov << ","
-        // årednie zarobki (jakoúÊ øycia)
+        // ≈örednie zarobki (jako≈õƒá ≈ºycia)
         << m.avgPayoffAlwaysC << ","
         << m.avgPayoffAlwaysD << ","
         << m.avgPayoffTFT << ","
@@ -474,9 +474,9 @@ void Simulation::exportMetricsRowIfNeeded() {
 }
 
 void Simulation::newCsvFile() {
-    std::ofstream f(exportPath, std::ios::trunc); // trunc usuwa zawartoúÊ
+    std::ofstream f(exportPath, std::ios::trunc); // trunc usuwa zawarto≈õƒá
     if (f.is_open()) {
-        csvHeaderWritten = false; // Wymuszenie ponownego zapisu nag≥Ûwka
+        csvHeaderWritten = false; // Wymuszenie ponownego zapisu nag≈Ç√≥wka
         f.close();
     }
 }
