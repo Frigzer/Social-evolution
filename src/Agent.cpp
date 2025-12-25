@@ -1,4 +1,4 @@
-﻿#include "Agent.hpp"
+#include "Agent.hpp"
 
 Agent::Agent(AgentType t)
     : type(t), currentAction(Action::Cooperate), lastAction(Action::Cooperate) {}
