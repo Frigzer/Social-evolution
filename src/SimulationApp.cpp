@@ -1,4 +1,4 @@
-#include "SimulationApp.hpp"
+﻿#include "SimulationApp.hpp"
 
 SimulationApp::SimulationApp()
     : window(sf::VideoMode({ WINDOW_WIDTH, WINDOW_HEIGHT }), "Ewolucja zachowan spolecznych",
@@ -8,8 +8,31 @@ SimulationApp::SimulationApp()
     gui(sim, running),
     leftPanel(sim, renderer)
 {
-    window.setFramerateLimit(30);
+    window.setFramerateLimit(60);
     ImGui::SFML::Init(window);
+
+    ImGuiIO& io = ImGui::GetIO();
+
+    // 1. Definiujemy zakresy znaków. 
+    // 0x0020-0x00FF to podstawa + Europa Zachodnia
+    // 0x0100-0x017F to Latin Extended-A (tu siedzi większość polskich znaków)
+    static const ImWchar ranges[] = {
+        0x0020, 0x00FF, // Basic Latin + Latin Supplement
+        0x0100, 0x017F, // Latin Extended-A (Polskie znaki)
+        0,              // Koniec tablicy
+    };
+
+
+    // 2. Ładujemy czcionkę systemową (Arial)
+    // UWAGA: Ścieżka działa na Windows. Jeśli font nie zostanie znaleziony, ImGui użyje domyślnego.
+    ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 16.0f, nullptr, ranges);
+
+    // Opcjonalnie: Jeśli wolisz ładniejszą czcionkę interfejsu (Segoe UI)
+    // io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f, nullptr, ranges);
+
+    // 3. Bardzo ważne dla ImGui-SFML: Odśwież teksturę czcionek!
+    // Bez tego zobaczysz białe kwadraty zamiast liter.
+    ImGui::SFML::UpdateFontTexture();
 
     leftPanel.setSize({ LEFT_PANEL_WIDTH, WINDOW_HEIGHT });
 }
