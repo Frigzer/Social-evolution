@@ -58,19 +58,64 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
     // --- SEKCJA 2: USTAWIENIA GRY ---
     // Używamy CollapsingHeader, żeby można było zwinąć sekcję
     if (ImGui::CollapsingHeader(PL("Macierz Wypłat (Game)"), ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::SliderFloat("Nagroda (R)", &sim.matrix.R, 0, 10);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reward: Zysk za obustronną współpracę");
 
-        ImGui::SliderFloat("Pokusa (T)", &sim.matrix.T, 0, 10);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Temptation: Zysk za zdradę naiwnego");
+        // --- NOWOŚĆ: Presety Gier ---
+        static int selectedGame = 0;
+        const char* gameNames[] = {
+            "--- Wybierz Grę ---",
+            "Dylemat Więźnia (Prisoner's Dilemma)",
+            "Polowanie na Jelenia (Stag Hunt)",
+            "Jastrząb-Gołąb (Chicken / Hawk-Dove)",
+            "Gra Harmonii (Harmony Game)"
+        };
 
-        ImGui::SliderFloat("Jeleń (S)", &sim.matrix.S, 0, 10);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sucker: Wypłata gdy współpracujesz a ciebie zdradzają");
+        // Wyświetlamy Combo. Jeśli użytkownik coś wybierze, aktualizujemy macierz.
+        if (ImGui::Combo(PL("Szybki Wybór"), &selectedGame, gameNames, IM_ARRAYSIZE(gameNames))) {
+            switch (selectedGame) {
+            case 1: // Dylemat Więźnia: T > R > P > S
+                // Pokusa zdrady (5) jest silna, ale współpraca (3) lepsza niż obustronna zdrada (1).
+                // Efekt: Powstawanie klastrów obronnych.
+                sim.matrix = { 3.0f, 5.0f, 0.0f, 1.0f };
+                break;
+            case 2: // Polowanie na Jelenia: R > T >= P > S
+                // Współpraca (5) jest najbardziej opłacalna, ale wymaga zaufania.
+                // Zdrada (3) jest bezpieczniejsza ("polowanie na zająca").
+                // Efekt: Dwa stabilne stany - albo wszyscy współpracują, albo wszyscy zdradzają.
+                sim.matrix = { 5.0f, 3.0f, 0.0f, 1.0f };
+                break;
+            case 3: // Jastrząb-Gołąb (Tchórz): T > R > S > P
+                // Najgorsza jest walka (P=0). Lepiej ustąpić i być "frajerem" (S=1) niż zginąć.
+                // Efekt: Szachownica/Wymieszanie. Jastrzębie żyją obok Gołębi.
+                sim.matrix = { 3.0f, 5.0f, 1.0f, 0.0f };
+                break;
+            case 4: // Harmonia: R > T > S > P
+                // Współpraca zawsze się opłaca. Nudna gra, ale dobra do testów.
+                // Efekt: 100% Zielonych w kilka tur.
+                sim.matrix = { 5.0f, 4.0f, 1.0f, 0.0f };
+                break;
+            }
+        }
 
-        ImGui::SliderFloat("Kara (P)", &sim.matrix.P, 0, 10);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Punishment: Kara za obustronną zdradę");
+        ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Odstęp
+        ImGui::TextDisabled(PL("Ręczna edycja parametrów:"));
 
-        ImGui::Checkbox("Normalizuj Wypłaty", &sim.normalizePayoff);
+        // Suwaki zostają, żebyś mógł modyfikować presety "w locie"
+        // Zmieniłem zakres do 6.0, bo rzadko wychodzi się poza ten zakres w klasycznych grach
+        ImGui::SliderFloat(PL("Nagroda (R)"), &sim.matrix.R, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Reward: Zysk za obustronną współpracę"));
+
+        ImGui::SliderFloat(PL("Pokusa (T)"), &sim.matrix.T, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Temptation: Zysk za zdradę naiwnego"));
+
+        ImGui::SliderFloat(PL("Jeleń (S)"), &sim.matrix.S, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Sucker: Wypłata gdy współpracujesz a ciebie zdradzają"));
+
+        ImGui::SliderFloat(PL("Kara (P)"), &sim.matrix.P, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Punishment: Kara za obustronną zdradę"));
+
+        ImGui::Separator();
+        ImGui::Checkbox(PL("Normalizuj Wypłaty"), &sim.normalizePayoff);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Dzieli wynik przez liczbę sąsiadów (ważne przy pustych polach)"));
     }
 
     // --- SEKCJA 3: ŚRODOWISKO ---
