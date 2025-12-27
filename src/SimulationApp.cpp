@@ -24,11 +24,21 @@ SimulationApp::SimulationApp()
 
 
     // 2. Ładujemy czcionkę systemową (Arial)
-    // UWAGA: Ścieżka działa na Windows. Jeśli font nie zostanie znaleziony, ImGui użyje domyślnego.
+    // UWAGA: Ścieżka działa na Windows. Jeśli font nie zostanie znaleziony, spróbujemy Segoe UI,
+    // a w ostateczności zostanie użyta domyślna czcionka ImGui.
     ImFont* font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\arial.ttf", 16.0f, nullptr, ranges);
+    if (!font) {
+        // fallback
+        font = io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 16.0f, nullptr, ranges);
+    }
 
-    // Opcjonalnie: Jeśli wolisz ładniejszą czcionkę interfejsu (Segoe UI)
-    // io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\segoeui.ttf", 18.0f, nullptr, ranges);
+    // Ustawiamy dodaną czcionkę jako domyślną, żeby ImGui rzeczywiście z niej korzystał.
+    if (font) {
+        io.FontDefault = font;
+    }
+    else {
+        // Jeśli obu nie ma, zostanie użyta czcionka domyślna ImGui (może nie zawierać rozszerzonych glifów).
+    }
 
     // 3. Bardzo ważne dla ImGui-SFML: Odśwież teksturę czcionek!
     // Bez tego zobaczysz białe kwadraty zamiast liter.
