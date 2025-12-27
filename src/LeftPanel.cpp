@@ -121,6 +121,7 @@ void LeftPanel::drawMetricsView() {
     float pAlwaysD = (float)m.countAlwaysD / totalPop;
     float pTFT = (float)m.countTitForTat / totalPop;
     float pPavlov = (float)m.countPavlov / totalPop;
+    float pDisc = (float)m.countDiscriminator / totalPop;
 
     // Rysujemy paski
     sprintf(buf, "Always C: %d (%.1f%%)", m.countAlwaysC, pAlwaysC * 100.f);
@@ -134,6 +135,9 @@ void LeftPanel::drawMetricsView() {
 
     sprintf(buf, "Pavlov: %d (%.1f%%)", m.countPavlov, pPavlov * 100.f);
     DrawColoredProgressBar(pPavlov, ImVec4(1.0f, 1.0f, 0.2f, 1.0f), buf);
+
+    sprintf(buf, "Discriminator: %d (%.1f%%)", m.countDiscriminator, pDisc * 100.f);
+    DrawColoredProgressBar(pDisc, ImVec4(0.7f, 0.2f, 1.0f, 1.0f), buf);
 
     ImGui::Dummy(ImVec2(0.0f, 10.0f));
 
@@ -172,6 +176,12 @@ void LeftPanel::drawMetricsView() {
         ImGui::TableSetColumnIndex(1); ImGui::Text("%d", m.countPavlov);
         ImGui::TableSetColumnIndex(2); ImGui::Text("%.3f", m.avgPayoffPavlov);
 
+        // Wiersz Discrimination
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0); ImGui::TextColored(ImVec4(0.7f, 0.2f, 1.0f, 1.0f), "Discriminator");
+        ImGui::TableSetColumnIndex(1); ImGui::Text("%d", m.countDiscriminator);
+        ImGui::TableSetColumnIndex(2); ImGui::Text("%.3f", m.avgPayoffDiscriminator);
+
         ImGui::EndTable();
     }
 
@@ -183,11 +193,12 @@ void LeftPanel::drawMetricsView() {
     ImGui::SliderInt("##history", &plotWindow, 100, 2000, "Zakres: %d");
 
     // Przygotowanie danych
-    static std::vector<float> popC, popD, popTFT, popPavlov;
+    static std::vector<float> popC, popD, popTFT, popPavlov, popDisc;
     fillSeriesWindowed(sim.history, plotWindow, popC, &MetricsSample::countAlwaysC);
     fillSeriesWindowed(sim.history, plotWindow, popD, &MetricsSample::countAlwaysD);
     fillSeriesWindowed(sim.history, plotWindow, popTFT, &MetricsSample::countTitForTat);
     fillSeriesWindowed(sim.history, plotWindow, popPavlov, &MetricsSample::countPavlov);
+    fillSeriesWindowed(sim.history, plotWindow, popDisc, &MetricsSample::countDiscriminator);
 
     float maxPop = (float)(sim.grid.width * sim.grid.height);
     ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 60.0f); // Stała wysokość wykresu
@@ -209,6 +220,10 @@ void LeftPanel::drawMetricsView() {
 
     ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.0f, 1.0f, 0.2f, 1.0f));
     ImGui::PlotLines("##Pav", popPavlov.data(), (int)popPavlov.size(), 0, "Pavlov", 0.0f, maxPop, plotSize);
+    ImGui::PopStyleColor();
+
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.7f, 0.2f, 1.0f, 1.0f));
+    ImGui::PlotLines("##Disc", popDisc.data(), (int)popDisc.size(), 0, "Discriminator", 0.0f, maxPop, plotSize);
     ImGui::PopStyleColor();
 
     ImGui::PopStyleVar(); // ItemSpacing

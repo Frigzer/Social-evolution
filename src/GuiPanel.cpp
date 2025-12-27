@@ -1,8 +1,6 @@
 #include "GuiPanel.hpp"
 #include "constants.hpp" // Upewnij się, że masz to do stałych rozmiarów
 
-#define PL(s) (const char*)u8##s
-
 GuiPanel::GuiPanel(Simulation& s, bool& r) : sim(s), running(r) {}
 
 void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
@@ -57,7 +55,7 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
 
     // --- SEKCJA 2: USTAWIENIA GRY ---
     // Używamy CollapsingHeader, żeby można było zwinąć sekcję
-    if (ImGui::CollapsingHeader(PL("Macierz Wypłat (Game)"), ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Macierz Wypłat (Game)", ImGuiTreeNodeFlags_DefaultOpen)) {
 
         // --- NOWOŚĆ: Presety Gier ---
         static int selectedGame = 0;
@@ -70,7 +68,7 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
         };
 
         // Wyświetlamy Combo. Jeśli użytkownik coś wybierze, aktualizujemy macierz.
-        if (ImGui::Combo(PL("Szybki Wybór"), &selectedGame, gameNames, IM_ARRAYSIZE(gameNames))) {
+        if (ImGui::Combo("Szybki Wybór", &selectedGame, gameNames, IM_ARRAYSIZE(gameNames))) {
             switch (selectedGame) {
             case 1: // Dylemat Więźnia: T > R > P > S
                 // Pokusa zdrady (5) jest silna, ale współpraca (3) lepsza niż obustronna zdrada (1).
@@ -97,25 +95,25 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
         }
 
         ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Odstęp
-        ImGui::TextDisabled(PL("Ręczna edycja parametrów:"));
+        ImGui::TextDisabled("Ręczna edycja parametrów:");
 
         // Suwaki zostają, żebyś mógł modyfikować presety "w locie"
         // Zmieniłem zakres do 6.0, bo rzadko wychodzi się poza ten zakres w klasycznych grach
-        ImGui::SliderFloat(PL("Nagroda (R)"), &sim.matrix.R, 0.0f, 6.0f);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Reward: Zysk za obustronną współpracę"));
+        ImGui::SliderFloat("Nagroda (R)", &sim.matrix.R, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reward: Zysk za obustronną współpracę");
 
-        ImGui::SliderFloat(PL("Pokusa (T)"), &sim.matrix.T, 0.0f, 6.0f);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Temptation: Zysk za zdradę naiwnego"));
+        ImGui::SliderFloat("Pokusa (T)", &sim.matrix.T, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Temptation: Zysk za zdradę naiwnego");
 
-        ImGui::SliderFloat(PL("Jeleń (S)"), &sim.matrix.S, 0.0f, 6.0f);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Sucker: Wypłata gdy współpracujesz a ciebie zdradzają"));
+        ImGui::SliderFloat("Jeleń (S)", &sim.matrix.S, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Sucker: Wypłata gdy współpracujesz a ciebie zdradzają");
 
-        ImGui::SliderFloat(PL("Kara (P)"), &sim.matrix.P, 0.0f, 6.0f);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Punishment: Kara za obustronną zdradę"));
+        ImGui::SliderFloat("Kara (P)", &sim.matrix.P, 0.0f, 6.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Punishment: Kara za obustronną zdradę");
 
         ImGui::Separator();
-        ImGui::Checkbox(PL("Normalizuj Wypłaty"), &sim.normalizePayoff);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip(PL("Dzieli wynik przez liczbę sąsiadów (ważne przy pustych polach)"));
+        ImGui::Checkbox("Normalizuj Wypłaty", &sim.normalizePayoff);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Dzieli wynik przez liczbę sąsiadów (ważne przy pustych polach)");
     }
 
     // --- SEKCJA 3: ŚRODOWISKO ---
@@ -154,6 +152,9 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
         ImGui::SliderFloat("Mutacja", &sim.mutationRate, 0.0f, 0.05f, "%.4f");
 
         ImGui::TextDisabled("--- Death-Birth Mode ---");
+        ImGui::SliderFloat("Tempo Rozrodu", &sim.reproductionProb, 0.0f, 1.0f, "%.2f");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Szansa na zajęcie pustego pola (niższa = więcej wolnego miejsca)");
+
         ImGui::SliderFloat("Śmiertelność", &sim.deathProb, 0.0f, 0.2f, "%.3f");
         ImGui::SliderFloat("Siła Selekcji (Beta)", &sim.selectionBeta, 0.0f, 5.0f, "%.2f");
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Jak bardzo zysk wpływa na szansę rozmnożenia");
@@ -166,9 +167,28 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Minimalny wzrost zysku wymagany do przeprowadzki");
     }
 
+    // --- SEKCJA 6: REPUTACJA I PAMIĘĆ ---
+    if (ImGui::CollapsingHeader("Gra Iterowana & Reputacja", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        ImGui::SliderInt("Rundy na pokolenie", &sim.roundsPerGeneration, 1, 200);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ile razy agenci grają ze sobą zanim nastąpi śmierć/rozród");
+
+        ImGui::Separator();
+        ImGui::TextDisabled("Parametry Dyskryminatora:");
+
+        ImGui::SliderFloat("Pamięć Reputacji (Alpha)", &sim.reputationAlpha, 0.0f, 0.5f, "%.3f");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Jak szybko zmienia się opinia o agencie (0.1 = wolno, 0.5 = szybko)");
+
+        ImGui::SliderFloat("Próg Zaufania", &sim.reputationThreshold, 0.0f, 1.0f, "%.2f");
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Minimalna reputacja sąsiadów, by Dyskryminator współpracował");
+
+        // Podgląd na żywo
+        ImGui::Text("Średnia reputacja populacji: %.3f", sim.lastMetrics.avgReputation);
+    }
+
     ImGui::Separator();
 
-    // --- SEKCJA 6: WIDOK I EKSPORT ---
+    // --- SEKCJA 7: WIDOK I EKSPORT ---
     ImGui::Text("Widok Panelu:");
     // Radio buttons w jednej linii
     if (ImGui::RadioButton("Symulacja", leftMode == LeftPanelMode::Simulation)) leftMode = LeftPanelMode::Simulation;

@@ -3,6 +3,9 @@
 #include "constants.hpp"
 #include <random>
 #include <deque>
+#include <string>
+#include <vector>
+#include <memory>
 
 struct PayoffMatrix {
     float R, T, S, P;
@@ -14,7 +17,7 @@ enum class UpdateRule {
 };
 
 enum class EvolutionMode {
-    Imitation,   // (Fermi/Best)
+    Imitation,
     DeathBirth
 };
 
@@ -26,37 +29,43 @@ enum class LeftPanelMode {
 struct MetricsSample {
     int generation = 0;
 
-    // Liczebność
+    // liczebności typów
     int countAlwaysC = 0;
     int countAlwaysD = 0;
     int countTitForTat = 0;
     int countPavlov = 0;
+    int countDiscriminator = 0;
 
-    // Średnia wypłata dla każdego typu ---
+    // średni payoff per typ
     float avgPayoffAlwaysC = 0.0f;
     float avgPayoffAlwaysD = 0.0f;
     float avgPayoffTFT = 0.0f;
     float avgPayoffPavlov = 0.0f;
+    float avgPayoffDiscriminator = 0.0f;
 
-    // Ogólne
+    // ogólne
     int alive = 0;
     int empty = 0;
     int coop = 0;
     int defect = 0;
     float coopRatio = 0.0f;
+
+    float avgReputation = 0.0f;
 };
 
 class Simulation {
 private:
-    std::vector<std::unique_ptr<Agent>> agents; // właściciel agentów
+    std::vector<std::unique_ptr<Agent>> agents;
     std::mt19937 rng;
 
     bool csvHeaderWritten = false;
-
     std::vector<Agent*> deadPool;
 
     float expectedPayoffAt(int x, int y, Action s) const;
     float payoffVs(Action a, Action b) const;
+
+    // Jedna SYNCHRONICZNA runda gry (bez ruchu)
+    void playOneRound();
 
 public:
     Grid grid;
@@ -64,35 +73,41 @@ public:
 
     EvolutionMode mode = EvolutionMode::DeathBirth;
 
-    // parametry modelu:
-    float density = 0.7f;     // % pól zajętych
-    float moveProb = 0.3f;    // szansa ruchu na pokolenie
+    // parametry modelu
+    float density = 0.7f;
+    float moveProb = 0.3f;         // szansa ruchu raz na pokolenie
+    float moveEpsilon = 0.05f;     // minimalna poprawa żeby ruszać (success-driven)
 
+    // IPD: K rund na pokolenie (payoff uśredniany)
+    int roundsPerGeneration = 10;
+
+    // reputacja
+    float reputationAlpha = 0.05f;       // szybkość EMA
+    float reputationThreshold = 0.6f;    // dla Discriminator
+
+    // death-birth
     float reproductionProb = 0.3f;
-    float deathProb = 0.02f;      // szansa śmierci w pokoleniu
-    float selectionBeta = 1.0f;   // siła selekcji w reprodukcji (większe => bardziej "wygrywa najlepszy")
+    float deathProb = 0.02f;
+    float selectionBeta = 1.0f;
 
-    bool normalizePayoff = true;
-
-    // ruch "success-driven"
-    float moveEpsilon = 0.05f; // minimalna poprawa, żeby opłacało się ruszyć
+    bool normalizePayoff = true; // avg po sąsiadach w każdej rundzie
 
     UpdateRule updateRule = UpdateRule::Fermi;
-    float mutationRate = 0.001f;   // 0.1%
-    float fermiK = 0.1f;           // "temperatura selekcji"
+    float mutationRate = 0.001f;
+    float fermiK = 0.1f;
 
     int generation = 0;
 
     MetricsSample lastMetrics{};
     std::deque<MetricsSample> history;
-    size_t historyMax = 2000; // ile punktów trzymamy do wykresu
+    size_t historyMax = 2000;
 
     bool exportCsvEnabled = false;
     std::string exportPath = "metrics.csv";
 
     Simulation(int width, int height, PayoffMatrix m);
 
-    void step(); // jedna runda ewolucji
+    void step();
     float cooperationRate() const;
 
     void recordMetrics();
