@@ -73,9 +73,19 @@ public:
 
     EvolutionMode mode = EvolutionMode::DeathBirth;
 
+	// strategie używane w symulacji
+    bool useAlwaysCooperate = true;
+    bool useAlwaysDefect = true;
+    bool useTitForTat = true;
+    bool usePavlov = true;
+    bool useDiscriminator = true;
+
+	// wektor do szybkiego sprawdzania dozwolonych typów
+    std::vector<AgentType> allowedTypes;
+
     // parametry modelu
-    float density = 0.7f;
-    float moveProb = 0.3f;         // szansa ruchu raz na pokolenie
+    float density = 0.6f;
+    float moveProb = 0.5f;         // szansa ruchu raz na pokolenie 0.3f
     float moveEpsilon = 0.05f;     // minimalna poprawa żeby ruszać (success-driven)
 
     // IPD: K rund na pokolenie (payoff uśredniany)
@@ -83,11 +93,11 @@ public:
 
     // reputacja
     float reputationAlpha = 0.05f;       // szybkość EMA
-    float reputationThreshold = 0.6f;    // dla Discriminator
+    float reputationThreshold = 0.45f;    // dla Discriminator
 
     // death-birth
-    float reproductionProb = 0.3f;
-    float deathProb = 0.02f;
+    float reproductionProb = 0.1f; // 0.3f
+	float deathProb = 0.05f; // 0.02f
     float selectionBeta = 1.0f;
 
     bool normalizePayoff = true; // avg po sąsiadach w każdej rundzie
