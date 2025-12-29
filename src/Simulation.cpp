@@ -9,6 +9,17 @@ static float fitnessFromPayoff(float payoff, float beta) {
 
 Simulation::Simulation(int width, int height, PayoffMatrix m)
     : grid(width, height), matrix(m), rng(std::random_device{}()) {
+    
+    // 1. Budujemy listę dozwolonych typów na podstawie flag
+    allowedTypes.clear();
+    if (useAlwaysCooperate) allowedTypes.push_back(AgentType::AlwaysCooperate);
+    if (useAlwaysDefect)    allowedTypes.push_back(AgentType::AlwaysDefect);
+    if (useTitForTat)       allowedTypes.push_back(AgentType::TitForTat);
+    if (usePavlov)          allowedTypes.push_back(AgentType::Pavlov);
+    if (useDiscriminator)   allowedTypes.push_back(AgentType::Discriminator);
+
+    // Zabezpieczenie: jeśli wyłączysz wszystkie, dodajemy chociaż jednego Coop, żeby nie crashowało
+    if (allowedTypes.empty()) allowedTypes.push_back(AgentType::AlwaysCooperate);
 
     std::bernoulli_distribution place(density);
 
@@ -16,9 +27,9 @@ Simulation::Simulation(int width, int height, PayoffMatrix m)
         for (int x = 0; x < grid.width; ++x) {
             if (!place(rng)) continue;
 
-            // Losujemy typ agenta (5 typów)
-            std::uniform_int_distribution<int> typeDist(0, 4);
-            AgentType t = static_cast<AgentType>(typeDist(rng));
+            // Losujemy typ agenta (5 typów - tylko te dozwolone)
+            std::uniform_int_distribution<int> typeDist(0, (int)allowedTypes.size() - 1);
+            AgentType t = allowedTypes[typeDist(rng)];
 
             auto a = std::make_unique<Agent>(t);
             a->payoff = 0.0f;
@@ -295,8 +306,8 @@ void Simulation::step() {
                 if (mutationRate > 0.0f) {
                     std::bernoulli_distribution mut(mutationRate);
                     if (mut(rng)) {
-                        std::uniform_int_distribution<int> typeDist(0, 4);
-                        child->type = static_cast<AgentType>(typeDist(rng));
+                        std::uniform_int_distribution<int> typeDist(0, (int)allowedTypes.size() - 1);
+                        child->type = allowedTypes[typeDist(rng)];
                     }
                 }
 
