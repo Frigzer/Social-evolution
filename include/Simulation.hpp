@@ -76,9 +76,9 @@ public:
 	// strategie używane w symulacji
     bool useAlwaysCooperate = true;
     bool useAlwaysDefect = true;
-    bool useTitForTat = true;
+    bool useTitForTat = false;
     bool usePavlov = true;
-    bool useDiscriminator = true;
+    bool useDiscriminator = false;
 
 	// wektor do szybkiego sprawdzania dozwolonych typów
     std::vector<AgentType> allowedTypes;
@@ -96,7 +96,7 @@ public:
     float reputationThreshold = 0.45f;    // dla Discriminator
 
     // death-birth
-    float reproductionProb = 0.1f; // 0.3f
+    float reproductionProb = 0.3f; // 0.3f
 	float deathProb = 0.05f; // 0.02f
     float selectionBeta = 1.0f;
 
