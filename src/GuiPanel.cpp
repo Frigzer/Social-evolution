@@ -117,7 +117,7 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
     }
 
     // --- SEKCJA 3: ŚRODOWISKO ---
-    if (ImGui::CollapsingHeader("Środowisko (Grid)", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Środowisko (Grid)")) {
 
         const char* boundaryItems[] = { "Torus (Zawijanie)", "Ściana (Clamp)", "Odbicie (Reflect)", "Pustka (Absorbing)" };
         int boundaryIdx = static_cast<int>(sim.grid.boundary);
@@ -137,6 +137,12 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
 
     // --- SEKCJA 4: EWOLUCJA ---
     if (ImGui::CollapsingHeader("Parametry Ewolucji")) {
+
+        const char* modes[] = { "Imitacja (Strategiczna)", "Death-Birth (Biologiczna)" };
+        int modeIdx = (sim.mode == EvolutionMode::Imitation) ? 0 : 1;
+        if (ImGui::Combo("Tryb Ewolucji", &modeIdx, modes, IM_ARRAYSIZE(modes))) {
+            sim.mode = (modeIdx == 0) ? EvolutionMode::Imitation : EvolutionMode::DeathBirth;
+        }
 
         const char* rules[] = { "Najlepszy Sąsiad", "Fermi (Probabilistyczne)" };
         int ruleIdx = (sim.updateRule == UpdateRule::BestNeighbor) ? 0 : 1;
@@ -168,7 +174,7 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
     }
 
     // --- SEKCJA 6: REPUTACJA I PAMIĘĆ ---
-    if (ImGui::CollapsingHeader("Gra Iterowana & Reputacja", ImGuiTreeNodeFlags_DefaultOpen)) {
+    if (ImGui::CollapsingHeader("Gra Iterowana & Reputacja")) {
 
         ImGui::SliderInt("Rundy na pokolenie", &sim.roundsPerGeneration, 1, 200);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ile razy agenci grają ze sobą zanim nastąpi śmierć/rozród");

@@ -71,14 +71,14 @@ public:
     Grid grid;
     PayoffMatrix matrix;
 
-    EvolutionMode mode = EvolutionMode::DeathBirth;
+    EvolutionMode mode = EvolutionMode::Imitation;
 
 	// strategie używane w symulacji
     bool useAlwaysCooperate = true;
     bool useAlwaysDefect = true;
-    bool useTitForTat = false;
+    bool useTitForTat = true;
     bool usePavlov = true;
-    bool useDiscriminator = false;
+    bool useDiscriminator = true;
 
 	// wektor do szybkiego sprawdzania dozwolonych typów
     std::vector<AgentType> allowedTypes;

@@ -326,7 +326,99 @@ void Simulation::step() {
         return;
     }
 
-    // jeśli kiedyś wrócisz do imitation:
+    // =========================
+    // FAZA 4: IMITATION
+    // =========================
+    if (mode == EvolutionMode::Imitation) {
+
+        // Bufor na nowe typy, żeby zmiany były synchroniczne 
+        // (wszyscy podejmują decyzję na podstawie STAREGO stanu)
+        std::vector<AgentType> nextTypes(grid.width * grid.height);
+
+        for (int y = 0; y < grid.height; ++y) {
+            for (int x = 0; x < grid.width; ++x) {
+                Agent* a = grid.get(x, y);
+                int idx = y * grid.width + x;
+
+                // Jeśli puste pole, nic się nie dzieje (w Imitacji puste pozostaje puste)
+                if (!a) {
+                    // Musimy zapamiętać, że tu nic nie ma, choć wektor przechowuje typy.
+                    // Ale my aktualizujemy tylko żywych. 
+                    // Typ w nextTypes dla pustego pola jest nieistotny.
+                    continue;
+                }
+
+                // Domyślnie zostajemy przy swoim typie
+                nextTypes[idx] = a->type;
+
+                // 1. Znajdź sąsiada do porównania
+                auto neighs = grid.getNeighborCoords(x, y);
+                if (neighs.empty()) continue;
+
+                // Wybieramy losowego sąsiada (standard w Ewolucyjnej Teorii Gier)
+                std::uniform_int_distribution<int> dist(0, (int)neighs.size() - 1);
+                auto [nx, ny] = neighs[dist(rng)];
+                Agent* neighbor = grid.get(nx, ny);
+
+                // Jeśli wylosowaliśmy puste pole, nic nie robimy
+                if (!neighbor) continue;
+
+                // 2. Decyzja o zmianie (Reguła update'u)
+                bool shouldCopy = false;
+
+                if (updateRule == UpdateRule::BestNeighbor) {
+                    // Kopiuj tylko jeśli sąsiad ma więcej punktów
+                    if (neighbor->payoff > a->payoff) {
+                        shouldCopy = true;
+                    }
+                }
+                else if (updateRule == UpdateRule::Fermi) {
+                    // Reguła Fermiego (probabilistyczna)
+                    // P = 1 / (1 + exp((MyPayoff - TheirPayoff) / K))
+                    float diff = a->payoff - neighbor->payoff; // Moje minus Jego
+                    float prob = 1.0f / (1.0f + std::exp(diff / fermiK));
+
+                    if (uni01(rng) < prob) {
+                        shouldCopy = true;
+                    }
+                }
+
+                if (shouldCopy) {
+                    nextTypes[idx] = neighbor->type;
+                }
+
+                // 3. Mutacja (szansa na losową zmianę mimo wszystko)
+                if (mutationRate > 0.0f) {
+                    if (uni01(rng) < mutationRate) {
+                        std::uniform_int_distribution<int> typeDist(0, (int)allowedTypes.size() - 1);
+                        nextTypes[idx] = allowedTypes[typeDist(rng)];
+                    }
+                }
+            }
+        }
+
+        // Aplikujemy zmiany
+        for (int y = 0; y < grid.height; ++y) {
+            for (int x = 0; x < grid.width; ++x) {
+                Agent* a = grid.get(x, y);
+                if (a) {
+                    int idx = y * grid.width + x;
+                    // Resetujemy parametry przy zmianie strategii
+                    if (a->type != nextTypes[idx]) {
+                        a->type = nextTypes[idx];
+                        a->strategyAge = 0;
+                        a->currentAction = Action::Cooperate; // Reset zachowania
+                        a->reputation = 0.5f; // Nowa tożsamość = nowa reputacja
+                    }
+                    else {
+                        a->strategyAge++;
+                    }
+                }
+            }
+        }
+    }
+
+
     generation++;
     recordMetrics();
     exportMetricsRowIfNeeded();
