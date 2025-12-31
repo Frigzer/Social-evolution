@@ -40,8 +40,6 @@ SimulationApp::SimulationApp()
         // Jeśli obu nie ma, zostanie użyta czcionka domyślna ImGui (może nie zawierać rozszerzonych glifów).
     }
 
-    // 3. Bardzo ważne dla ImGui-SFML: Odśwież teksturę czcionek!
-    // Bez tego zobaczysz białe kwadraty zamiast liter.
     ImGui::SFML::UpdateFontTexture();
 
     leftPanel.setSize({ LEFT_PANEL_WIDTH, WINDOW_HEIGHT });

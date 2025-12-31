@@ -24,10 +24,6 @@ void LeftPanel::draw() {
     ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
     ImGui::SetNextWindowSize(ImVec2((float)LEFT_PANEL_WIDTH, (float)WINDOW_HEIGHT), ImGuiCond_Always);
 
-    // --- NAPRAWA PADDINGU ---
-    // Decydujemy o marginesie PRZED rozpoczęciem okna.
-    // Dla symulacji chcemy 0 (obraz na całe okno).
-    // Dla metryk chcemy 10 (żeby tekst nie dotykał krawędzi).
     ImVec2 padding = (mode == LeftPanelMode::Simulation) ? ImVec2(0.0f, 0.0f) : ImVec2(10.0f, 10.0f);
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, padding);
@@ -85,8 +81,6 @@ static void DrawColoredProgressBar(float fraction, const ImVec4& color, const ch
 }
 
 void LeftPanel::drawMetricsView() {
-    // Tutaj NIE używamy już ImGui::Indent, bo mamy WindowPadding ustawiony w draw()
-
     const auto& m = sim.lastMetrics;
     float totalPop = (float)std::max(1, m.alive);
 
@@ -110,7 +104,7 @@ void LeftPanel::drawMetricsView() {
     ImGui::ProgressBar(coopP, ImVec2(-1.0f, 0.0f), buf);
     ImGui::PopStyleColor();
 
-    // 2. Wskaźnik REPUTACJI (Zaufanie) - NOWOŚĆ
+    // 2. Wskaźnik REPUTACJI (Zaufanie)
     float repP = m.avgReputation;
     // Kolor cyjanowy/niebieski dla odróżnienia
     ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f, 0.7f, 0.9f, 1.0f));
@@ -213,9 +207,8 @@ void LeftPanel::drawMetricsView() {
     fillSeriesWindowed(sim.history, plotWindow, histRep, &MetricsSample::avgReputation);
 
     float maxPop = (float)(sim.grid.width * sim.grid.height);
-    ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 50.0f); // Troszkę mniejsze żeby weszło 6
+    ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 50.0f);
 
-    // Wykresy jeden pod drugim, ale "zbite"
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2)); // Mniejszy odstęp między wykresami
 
     ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.2f, 1.0f, 0.2f, 1.0f));
@@ -238,7 +231,6 @@ void LeftPanel::drawMetricsView() {
     ImGui::PlotLines("##Disc", popDisc.data(), (int)popDisc.size(), 0, "Discriminator", 0.0f, maxPop, plotSize);
     ImGui::PopStyleColor();
 
-    // --- NOWY WYKRES: REPUTACJA ---
     // Złoty kolor, skala 0.0 - 1.0
     ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
     ImGui::PlotLines("##Rep", histRep.data(), (int)histRep.size(), 0, "Global Reputation (0-1)", 0.0f, 1.0f, plotSize);
