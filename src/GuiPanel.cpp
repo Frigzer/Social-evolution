@@ -1,5 +1,5 @@
 #include "GuiPanel.hpp"
-#include "constants.hpp" // Upewnij się, że masz to do stałych rozmiarów
+#include "constants.hpp"
 
 GuiPanel::GuiPanel(Simulation& s, bool& r) : sim(s), running(r) {}
 
@@ -30,9 +30,9 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
 
     // --- SEKCJA 1: STATYSTYKI I KONTROLA ---
 
-    // Przyciski obok siebie (50% szerokości każdy)
+    // Przyciski obok siebie
     float availWidth = ImGui::GetContentRegionAvail().x;
-    if (ImGui::Button(running ? "PAUZA" : "START", ImVec2(availWidth * 0.5f - 5.f, 0.0f))) {
+    if (ImGui::Button(running ? "PAUZA" : "START", ImVec2(availWidth * 0.33f - 5.f, 0.0f))) {
         running = !running;
     }
 
@@ -41,23 +41,54 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
 
     ImGui::SameLine(); // Następny element w tej samej linii
 
-    if (ImGui::Button("KROK +1", ImVec2(availWidth * 0.5f - 5.f, 0.0f))) {
+    if (ImGui::Button("KROK +1", ImVec2(availWidth * 0.33f - 5.f, 0.0f))) {
         sim.step();
     }
 
+    ImGui::SameLine();
+
+    // Przycisk RESET
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.2f, 0.2f, 1.0f));
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(1.0f, 0.3f, 0.3f, 1.0f));
+    if (ImGui::Button("RESET", ImVec2(availWidth * 0.33f - 5.f, 0.0f))) {
+        sim.reset();
+        running = false;
+    }
+    ImGui::PopStyleColor(2);
+    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Restartuje symulację z nowymi ustawieniami populacji");
+
     ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Odstęp pionowy
 
-    // Statystyki na żywo (wyróżnione kolorem)
+    // Statystyki na żywo
     ImGui::TextColored(ImVec4(0.5f, 0.8f, 1.0f, 1.0f), "Generacja: %d", sim.generation);
     ImGui::TextColored(ImVec4(0.0f, 1.0f, 0.0f, 1.0f), "Kooperacja: %.2f%%", sim.cooperationRate() * 100.f);
 
     ImGui::Separator();
 
+    if (ImGui::CollapsingHeader("Konfiguracja Świata (Wymaga Resetu)", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+        ImGui::TextDisabled("Wybierz aktywne strategie:");
+
+        // Kolorowe checkbox'y
+        ImGui::Checkbox("Zieloni (Always C)", &sim.useAlwaysCooperate);
+        ImGui::Checkbox("Czerwoni (Always D)", &sim.useAlwaysDefect);
+        ImGui::Checkbox("Niebiescy (Tit-For-Tat)", &sim.useTitForTat);
+        ImGui::Checkbox("Żółci (Pavlov)", &sim.usePavlov);
+        ImGui::Checkbox("Fioletowi (Dyskryminator)", &sim.useDiscriminator);
+
+        ImGui::Dummy(ImVec2(0.0f, 5.0f));
+
+        ImGui::SliderFloat("Gęstość (Density)", &sim.density, 0.01f, 1.0f);
+        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Ile planszy jest zajęte na starcie");
+
+        if (ImGui::Button("Zastosuj i Resetuj", ImVec2(availWidth, 0.0f))) {
+            sim.reset();
+        }
+    }
+
     // --- SEKCJA 2: USTAWIENIA GRY ---
-    // Używamy CollapsingHeader, żeby można było zwinąć sekcję
     if (ImGui::CollapsingHeader("Macierz Wypłat (Game)", ImGuiTreeNodeFlags_DefaultOpen)) {
 
-        // --- NOWOŚĆ: Presety Gier ---
         static int selectedGame = 0;
         const char* gameNames[] = {
             "--- Wybierz Grę ---",
@@ -87,8 +118,7 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
                 sim.matrix = { 3.0f, 5.0f, 1.0f, 0.0f };
                 break;
             case 4: // Harmonia: R > T > S > P
-                // Współpraca zawsze się opłaca. Nudna gra, ale dobra do testów.
-                // Efekt: 100% Zielonych w kilka tur.
+                // Współpraca zawsze się opłaca.
                 sim.matrix = { 5.0f, 4.0f, 1.0f, 0.0f };
                 break;
             }
@@ -97,8 +127,6 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
         ImGui::Dummy(ImVec2(0.0f, 5.0f)); // Odstęp
         ImGui::TextDisabled("Ręczna edycja parametrów:");
 
-        // Suwaki zostają, żebyś mógł modyfikować presety "w locie"
-        // Zmieniłem zakres do 6.0, bo rzadko wychodzi się poza ten zakres w klasycznych grach
         ImGui::SliderFloat("Nagroda (R)", &sim.matrix.R, 0.0f, 6.0f);
         if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reward: Zysk za obustronną współpracę");
 
@@ -130,9 +158,6 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
         if (ImGui::Combo("Sąsiedztwo", &neighIdx, neighborhoodItems, IM_ARRAYSIZE(neighborhoodItems))) {
             sim.grid.neighborhood = static_cast<NeighborhoodType>(neighIdx);
         }
-
-        ImGui::SliderFloat("Gęstość (Density)", &sim.density, 0.1f, 1.0f);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Początkowe zagęszczenie populacji (wymaga resetu symulacji)");
     }
 
     // --- SEKCJA 4: EWOLUCJA ---
@@ -208,7 +233,7 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
         // Logika on/off
     }
     ImGui::SameLine();
-    // Skracamy ścieżkę wizualnie jeśli za długa, ale tu pewnie krótka
+
     ImGui::TextDisabled("(%s)", "metrics.csv");
 
     if (ImGui::Button("Wyczyść / Nowy Plik", ImVec2(availWidth, 0.0f))) {

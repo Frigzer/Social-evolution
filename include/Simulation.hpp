@@ -43,6 +43,13 @@ struct MetricsSample {
     float avgPayoffPavlov = 0.0f;
     float avgPayoffDiscriminator = 0.0f;
 
+    // średnia reputacja per typ
+    float avgRepAlwaysC = 0.0f;
+    float avgRepAlwaysD = 0.0f;
+    float avgRepTFT = 0.0f;
+    float avgRepPavlov = 0.0f;
+    float avgRepDiscriminator = 0.0f;
+
     // ogólne
     int alive = 0;
     int empty = 0;
@@ -50,7 +57,8 @@ struct MetricsSample {
     int defect = 0;
     float coopRatio = 0.0f;
 
-    float avgReputation = 0.0f;
+    float avgReputation = 0.0f; // Globalna reputacja
+    float avgStrategyAge = 0.0f; // Średni wiek (stabilność)
 };
 
 class Simulation {
@@ -125,4 +133,6 @@ public:
 
     // Funkcja do czyszczenia pliku CSV
     void newCsvFile();
+
+    void reset();
 };

@@ -102,3 +102,8 @@ std::vector<std::pair<int, int>> Grid::getNeighborCoords(int x, int y) const {
     return out;
 }
 
+void Grid::clear() {
+    std::fill(agents.begin(), agents.end(), nullptr);
+}
+
+

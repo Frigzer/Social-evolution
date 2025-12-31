@@ -10,35 +10,8 @@ static float fitnessFromPayoff(float payoff, float beta) {
 Simulation::Simulation(int width, int height, PayoffMatrix m)
     : grid(width, height), matrix(m), rng(std::random_device{}()) {
     
-    // 1. Budujemy listę dozwolonych typów na podstawie flag
-    allowedTypes.clear();
-    if (useAlwaysCooperate) allowedTypes.push_back(AgentType::AlwaysCooperate);
-    if (useAlwaysDefect)    allowedTypes.push_back(AgentType::AlwaysDefect);
-    if (useTitForTat)       allowedTypes.push_back(AgentType::TitForTat);
-    if (usePavlov)          allowedTypes.push_back(AgentType::Pavlov);
-    if (useDiscriminator)   allowedTypes.push_back(AgentType::Discriminator);
-
-    // Zabezpieczenie: jeśli wyłączysz wszystkie, dodajemy chociaż jednego Coop, żeby nie crashowało
-    if (allowedTypes.empty()) allowedTypes.push_back(AgentType::AlwaysCooperate);
-
-    std::bernoulli_distribution place(density);
-
-    for (int y = 0; y < grid.height; ++y) {
-        for (int x = 0; x < grid.width; ++x) {
-            if (!place(rng)) continue;
-
-            // Losujemy typ agenta (5 typów - tylko te dozwolone)
-            std::uniform_int_distribution<int> typeDist(0, (int)allowedTypes.size() - 1);
-            AgentType t = allowedTypes[typeDist(rng)];
-
-            auto a = std::make_unique<Agent>(t);
-            a->payoff = 0.0f;
-            a->lastPayoff = 0.0f;
-            a->reputation = 0.5f; // neutralnie
-            grid.get(x, y) = a.get();
-            agents.push_back(std::move(a));
-        }
-    }
+    // Konstruktor tylko inicjalizuje, resztę robi reset
+    reset();
 }
 
 float Simulation::payoffVs(Action a, Action b) const {
@@ -445,9 +418,17 @@ void Simulation::recordMetrics() {
     int alive = 0, empty = 0;
     int coop = 0, defect = 0;
 
+    // Liczniki dla średnich (Liczba i Suma)
     int cAC = 0, cAD = 0, cT = 0, cP = 0, cDisc = 0;
-    double sumAC = 0, sumAD = 0, sumT = 0, sumP = 0, sumDisc = 0;
-    double sumRep = 0.0;
+
+    // Payoff sumy
+    double sumPayAC = 0, sumPayAD = 0, sumPayT = 0, sumPayP = 0, sumPayDisc = 0;
+
+    // Reputacja sumy (NOWOŚĆ)
+    double sumRepAC = 0, sumRepAD = 0, sumRepT = 0, sumRepP = 0, sumRepDisc = 0;
+
+    double globalSumRep = 0.0;
+    double globalSumAge = 0.0; // Do średniego wieku
 
     for (int y = 0; y < grid.height; ++y) {
         for (int x = 0; x < grid.width; ++x) {
@@ -455,39 +436,73 @@ void Simulation::recordMetrics() {
             if (!a) { empty++; continue; }
 
             alive++;
-            sumRep += a->reputation;
+            globalSumRep += a->reputation;
+            globalSumAge += a->strategyAge; // Sumujemy wiek
 
             if (a->currentAction == Action::Cooperate) coop++;
             else defect++;
 
             switch (a->type) {
-            case AgentType::AlwaysCooperate: cAC++; sumAC += a->payoff; break;
-            case AgentType::AlwaysDefect:    cAD++; sumAD += a->payoff; break;
-            case AgentType::TitForTat:       cT++;  sumT += a->payoff; break;
-            case AgentType::Pavlov:          cP++;  sumP += a->payoff; break;
-            case AgentType::Discriminator:   cDisc++; sumDisc += a->payoff; break;
+            case AgentType::AlwaysCooperate:
+                cAC++;
+                sumPayAC += a->payoff;
+                sumRepAC += a->reputation;
+                break;
+            case AgentType::AlwaysDefect:
+                cAD++;
+                sumPayAD += a->payoff;
+                sumRepAD += a->reputation;
+                break;
+            case AgentType::TitForTat:
+                cT++;
+                sumPayT += a->payoff;
+                sumRepT += a->reputation;
+                break;
+            case AgentType::Pavlov:
+                cP++;
+                sumPayP += a->payoff;
+                sumRepP += a->reputation;
+                break;
+            case AgentType::Discriminator:
+                cDisc++;
+                sumPayDisc += a->payoff;
+                sumRepDisc += a->reputation;
+                break;
             }
         }
     }
 
+    // Podstawowe
     m.alive = alive;
     m.empty = empty;
     m.coop = coop;
     m.defect = defect;
     m.coopRatio = (alive > 0) ? (float)coop / (float)alive : 0.0f;
-    m.avgReputation = (alive > 0) ? (float)(sumRep / (double)alive) : 0.0f;
 
+    // Globalne średnie
+    m.avgReputation = (alive > 0) ? (float)(globalSumRep / (double)alive) : 0.0f;
+    m.avgStrategyAge = (alive > 0) ? (float)(globalSumAge / (double)alive) : 0.0f;
+
+    // Liczebności
     m.countAlwaysC = cAC;
     m.countAlwaysD = cAD;
     m.countTitForTat = cT;
     m.countPavlov = cP;
     m.countDiscriminator = cDisc;
 
-    m.avgPayoffAlwaysC = (cAC > 0) ? (float)(sumAC / (double)cAC) : 0.0f;
-    m.avgPayoffAlwaysD = (cAD > 0) ? (float)(sumAD / (double)cAD) : 0.0f;
-    m.avgPayoffTFT = (cT > 0) ? (float)(sumT / (double)cT) : 0.0f;
-    m.avgPayoffPavlov = (cP > 0) ? (float)(sumP / (double)cP) : 0.0f;
-    m.avgPayoffDiscriminator = (cDisc > 0) ? (float)(sumDisc / (double)cDisc) : 0.0f;
+    // Średnie Payoff
+    m.avgPayoffAlwaysC = (cAC > 0) ? (float)(sumPayAC / cAC) : 0.0f;
+    m.avgPayoffAlwaysD = (cAD > 0) ? (float)(sumPayAD / cAD) : 0.0f;
+    m.avgPayoffTFT = (cT > 0) ? (float)(sumPayT / cT) : 0.0f;
+    m.avgPayoffPavlov = (cP > 0) ? (float)(sumPayP / cP) : 0.0f;
+    m.avgPayoffDiscriminator = (cDisc > 0) ? (float)(sumPayDisc / cDisc) : 0.0f;
+
+    // Średnie Reputacje (NOWOŚĆ)
+    m.avgRepAlwaysC = (cAC > 0) ? (float)(sumRepAC / cAC) : 0.0f;
+    m.avgRepAlwaysD = (cAD > 0) ? (float)(sumRepAD / cAD) : 0.0f;
+    m.avgRepTFT = (cT > 0) ? (float)(sumRepT / cT) : 0.0f;
+    m.avgRepPavlov = (cP > 0) ? (float)(sumRepP / cP) : 0.0f;
+    m.avgRepDiscriminator = (cDisc > 0) ? (float)(sumRepDisc / cDisc) : 0.0f;
 
     lastMetrics = m;
     history.push_back(m);
@@ -500,10 +515,12 @@ void Simulation::exportMetricsRowIfNeeded() {
     std::ofstream f(exportPath, std::ios::app);
     if (!f) return;
 
+    // Jeśli nagłówek nie został zapisany, tworzymy go (z nowymi kolumnami)
     if (!csvHeaderWritten) {
-        f << "generation,alive,empty,coop,defect,coopRatio,avgReputation,"
-            << "countAlwaysC,countAlwaysD,countTFT,countPavlov,countDiscriminator,"
-            << "avgPayoffAlwaysC,avgPayoffAlwaysD,avgPayoffTFT,avgPayoffPavlov,avgPayoffDiscriminator\n";
+        f << "Generation,Alive,Empty,Coop,Defect,CoopRatio,AvgReputation,AvgStrategyAge,"
+            << "Count_AC,Count_AD,Count_TFT,Count_Pavlov,Count_Disc,"
+            << "Payoff_AC,Payoff_AD,Payoff_TFT,Payoff_Pavlov,Payoff_Disc,"
+            << "Rep_AC,Rep_AD,Rep_TFT,Rep_Pavlov,Rep_Disc\n";
         csvHeaderWritten = true;
     }
 
@@ -515,16 +532,28 @@ void Simulation::exportMetricsRowIfNeeded() {
         << m.defect << ","
         << m.coopRatio << ","
         << m.avgReputation << ","
+        << m.avgStrategyAge << ","
+
+        // Counts
         << m.countAlwaysC << ","
         << m.countAlwaysD << ","
         << m.countTitForTat << ","
         << m.countPavlov << ","
         << m.countDiscriminator << ","
+
+        // Payoffs
         << m.avgPayoffAlwaysC << ","
         << m.avgPayoffAlwaysD << ","
         << m.avgPayoffTFT << ","
         << m.avgPayoffPavlov << ","
-        << m.avgPayoffDiscriminator
+        << m.avgPayoffDiscriminator << ","
+
+        // Reputations
+        << m.avgRepAlwaysC << ","
+        << m.avgRepAlwaysD << ","
+        << m.avgRepTFT << ","
+        << m.avgRepPavlov << ","
+        << m.avgRepDiscriminator
         << "\n";
 }
 
@@ -534,4 +563,50 @@ void Simulation::newCsvFile() {
         csvHeaderWritten = false; // Wymuszenie ponownego zapisu nagłówka
         f.close();
     }
+}
+
+void Simulation::reset() {
+    // 1. Czyścimy wszystko
+    agents.clear();      // Usuwa obiekty agentów (unique_ptr)
+    grid.clear();        // Zeruje wskaźniki na siatce
+    deadPool.clear();    // Czyści pulę martwych
+    history.clear();     // Czyści wykresy
+
+    generation = 0;
+    csvHeaderWritten = false; // Żeby nowy plik CSV miał nagłówek
+
+    // 2. Aktualizujemy listę dozwolonych typów (na podstawie flag z GUI)
+    allowedTypes.clear();
+    if (useAlwaysCooperate) allowedTypes.push_back(AgentType::AlwaysCooperate);
+    if (useAlwaysDefect)    allowedTypes.push_back(AgentType::AlwaysDefect);
+    if (useTitForTat)       allowedTypes.push_back(AgentType::TitForTat);
+    if (usePavlov)          allowedTypes.push_back(AgentType::Pavlov);
+    if (useDiscriminator)   allowedTypes.push_back(AgentType::Discriminator);
+
+    // Zabezpieczenie: musi być przynajmniej jeden typ
+    if (allowedTypes.empty()) allowedTypes.push_back(AgentType::AlwaysCooperate);
+
+    // 3. Rozmieszczamy agentów (tak jak wcześniej w konstruktorze)
+    std::bernoulli_distribution place(density);
+
+    for (int y = 0; y < grid.height; ++y) {
+        for (int x = 0; x < grid.width; ++x) {
+            if (!place(rng)) continue;
+
+            // Losujemy typ z allowedTypes
+            std::uniform_int_distribution<int> typeDist(0, (int)allowedTypes.size() - 1);
+            AgentType t = allowedTypes[typeDist(rng)];
+
+            auto a = std::make_unique<Agent>(t);
+            a->payoff = 0.0f;
+            a->lastPayoff = 0.0f;
+            a->reputation = 0.5f;
+
+            grid.get(x, y) = a.get();
+            agents.push_back(std::move(a));
+        }
+    }
+
+    // 4. Zapisz stan początkowy (generacja 0)
+    recordMetrics();
 }

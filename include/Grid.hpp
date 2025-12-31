@@ -36,4 +36,6 @@ public:
     int mapY(int y) const;
     
     std::vector<std::pair<int, int>> getNeighborCoords(int x, int y) const;
+
+    void clear();
 };

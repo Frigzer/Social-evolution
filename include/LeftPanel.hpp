@@ -11,7 +11,7 @@ class LeftPanel {
 public:
     LeftPanel(Simulation& sim, SimulationRenderer& renderer);
 
-    void setSize(sf::Vector2u size); // np. 800x800
+    void setSize(sf::Vector2u size);
     void setMode(LeftPanelMode m);
     LeftPanelMode getMode() const;
 

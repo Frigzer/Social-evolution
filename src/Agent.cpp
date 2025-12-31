@@ -19,7 +19,6 @@ Action Agent::decideAction(const std::vector<const Agent*>& neighbors, float rep
     case AgentType::TitForTat: {
         // Wersja przestrzenna: jeśli JAKIKOLWIEK sąsiad w poprzedniej rundzie zdradził -> zdradzam,
         // w przeciwnym razie współpracuję.
-        // (to jest standardowy "spatial TFT" bez pamięci per-ID)
         for (const auto* n : neighbors) {
             if (n && n->lastAction == Action::Defect) {
                 return Action::Defect;
@@ -32,7 +31,6 @@ Action Agent::decideAction(const std::vector<const Agent*>& neighbors, float rep
         // Win-Stay, Lose-Shift:
         // jeśli poprzednia runda dała "dobry" payoff -> zostaję przy swojej akcji,
         // jeśli "zły" -> zmieniam.
-        // Próg 2.0 możesz później związać z macierzą (np. (R+T)/2).
         if (lastPayoff >= pavlovThreshold) {
             return currentAction; // stay
         }
@@ -62,10 +60,41 @@ Action Agent::decideAction(const std::vector<const Agent*>& neighbors, float rep
 }
 
 sf::Color Agent::getColor() const {
-    if (type == AgentType::AlwaysCooperate) return sf::Color(50, 255, 50);
-    if (type == AgentType::AlwaysDefect)    return sf::Color(255, 50, 50);
-    if (type == AgentType::TitForTat)       return sf::Color(50, 100, 255);
-    if (type == AgentType::Pavlov)          return sf::Color(255, 255, 50);
-    if (type == AgentType::Discriminator)   return sf::Color(180, 60, 255); // fiolet
-    return sf::Color::White;
+    // Krok 1: Wybierz kolor bazowy (Tożsamość / Strategia)
+    sf::Color baseColor = sf::Color::White;
+
+    switch (type) {
+    case AgentType::AlwaysCooperate:
+        return sf::Color(50, 255, 50); // Zawsze Jasny Zielony
+
+    case AgentType::AlwaysDefect:
+        return sf::Color(255, 50, 50); // Zawsze Jasny Czerwony (Agresor)
+
+    case AgentType::TitForTat:
+        baseColor = sf::Color(50, 100, 255); // Bazowy Niebieski
+        break;
+
+    case AgentType::Pavlov:
+        baseColor = sf::Color(255, 255, 50); // Bazowy Żółty
+        break;
+
+    case AgentType::Discriminator:
+        baseColor = sf::Color(180, 60, 255); // Bazowy Fiolet
+        break;
+    }
+
+    // Krok 2: Zmodyfikuj odcień w zależności od AKCJI (Zachowanie)
+    // Dotyczy tylko strategii adaptacyjnych (TFT, Pavlov, Disc)
+    if (currentAction == Action::Cooperate) {
+        // Współpraca = Czysty kolor (Świetlisty)
+        return baseColor;
+    }
+    else {
+        // Zdrada = Przyciemniony kolor
+        return sf::Color(
+            (baseColor.r * 0.4f),
+            (baseColor.g * 0.4f),
+            (baseColor.b * 0.4f)
+        );
+    }
 }

@@ -101,13 +101,21 @@ void LeftPanel::drawMetricsView() {
 
     ImGui::Text("Populacja: %d / %d", m.alive, sim.grid.width * sim.grid.height);
 
-    // Wskaźnik kooperacji
+    // 1. Wskaźnik KOOPERACJI (Zachowanie)
     float coopP = m.coopRatio;
     ImVec4 coopColor = ImVec4(1.0f - coopP, coopP, 0.2f, 1.0f); // Od czerwonego do zielonego
     ImGui::PushStyleColor(ImGuiCol_PlotHistogram, coopColor);
-    char buf[32];
+    char buf[64];
     sprintf(buf, "Kooperacja: %.1f%%", coopP * 100.0f);
     ImGui::ProgressBar(coopP, ImVec2(-1.0f, 0.0f), buf);
+    ImGui::PopStyleColor();
+
+    // 2. Wskaźnik REPUTACJI (Zaufanie) - NOWOŚĆ
+    float repP = m.avgReputation;
+    // Kolor cyjanowy/niebieski dla odróżnienia
+    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(0.0f, 0.7f, 0.9f, 1.0f));
+    sprintf(buf, "Srednia Reputacja: %.2f", repP);
+    ImGui::ProgressBar(repP, ImVec2(-1.0f, 0.0f), buf);
     ImGui::PopStyleColor();
 
     ImGui::Dummy(ImVec2(0.0f, 10.0f));
@@ -188,20 +196,24 @@ void LeftPanel::drawMetricsView() {
     ImGui::Dummy(ImVec2(0.0f, 10.0f));
 
     // --- WYKRESY HISTORII ---
-    ImGui::TextDisabled("HISTORIA POPULACJI");
+    ImGui::TextDisabled("HISTORIA POPULACJI & REPUTACJI");
     ImGui::SameLine();
     ImGui::SliderInt("##history", &plotWindow, 100, 2000, "Zakres: %d");
 
     // Przygotowanie danych
     static std::vector<float> popC, popD, popTFT, popPavlov, popDisc;
+    static std::vector<float> histRep; // Dane dla reputacji
+
     fillSeriesWindowed(sim.history, plotWindow, popC, &MetricsSample::countAlwaysC);
     fillSeriesWindowed(sim.history, plotWindow, popD, &MetricsSample::countAlwaysD);
     fillSeriesWindowed(sim.history, plotWindow, popTFT, &MetricsSample::countTitForTat);
     fillSeriesWindowed(sim.history, plotWindow, popPavlov, &MetricsSample::countPavlov);
     fillSeriesWindowed(sim.history, plotWindow, popDisc, &MetricsSample::countDiscriminator);
+    // Pobieramy historię reputacji
+    fillSeriesWindowed(sim.history, plotWindow, histRep, &MetricsSample::avgReputation);
 
     float maxPop = (float)(sim.grid.width * sim.grid.height);
-    ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 60.0f); // Stała wysokość wykresu
+    ImVec2 plotSize(ImGui::GetContentRegionAvail().x, 50.0f); // Troszkę mniejsze żeby weszło 6
 
     // Wykresy jeden pod drugim, ale "zbite"
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2)); // Mniejszy odstęp między wykresami
@@ -224,6 +236,12 @@ void LeftPanel::drawMetricsView() {
 
     ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(0.7f, 0.2f, 1.0f, 1.0f));
     ImGui::PlotLines("##Disc", popDisc.data(), (int)popDisc.size(), 0, "Discriminator", 0.0f, maxPop, plotSize);
+    ImGui::PopStyleColor();
+
+    // --- NOWY WYKRES: REPUTACJA ---
+    // Złoty kolor, skala 0.0 - 1.0
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.0f, 0.8f, 0.0f, 1.0f));
+    ImGui::PlotLines("##Rep", histRep.data(), (int)histRep.size(), 0, "Global Reputation (0-1)", 0.0f, 1.0f, plotSize);
     ImGui::PopStyleColor();
 
     ImGui::PopStyleVar(); // ItemSpacing
