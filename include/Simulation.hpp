@@ -79,7 +79,7 @@ public:
     Grid grid;
     PayoffMatrix matrix;
 
-    EvolutionMode mode = EvolutionMode::Imitation;
+    EvolutionMode mode = EvolutionMode::DeathBirth;
 
 	// strategie używane w symulacji
     bool useAlwaysCooperate = true;
@@ -92,20 +92,20 @@ public:
     std::vector<AgentType> allowedTypes;
 
     // parametry modelu
-    float density = 0.6f;
-    float moveProb = 0.5f;         // szansa ruchu raz na pokolenie 0.3f
+    float density = 0.7f;
+    float moveProb = 0.1f;         // szansa ruchu raz na pokolenie 0.3f
     float moveEpsilon = 0.05f;     // minimalna poprawa żeby ruszać (success-driven)
 
     // IPD: K rund na pokolenie (payoff uśredniany)
-    int roundsPerGeneration = 10;
+    int roundsPerGeneration = 20;
 
     // reputacja
     float reputationAlpha = 0.05f;       // szybkość EMA
     float reputationThreshold = 0.45f;    // dla Discriminator
 
     // death-birth
-    float reproductionProb = 0.3f; // 0.3f
-	float deathProb = 0.05f; // 0.02f
+    float reproductionProb = 0.3f;
+    float deathProb = 0.02f;
     float selectionBeta = 1.0f;
 
     bool normalizePayoff = true; // avg po sąsiadach w każdej rundzie
