@@ -1,8 +1,8 @@
 ﻿#pragma once
 
 // Ustawienia Symulacji (Logika)
-static constexpr int GRID_WIDTH = 100; // Domyślna szerokość siatki
-static constexpr int GRID_HEIGHT = 100; // Domyślna wysokość siatki
+static constexpr int GRID_WIDTH = 200; // Domyślna szerokość siatki
+static constexpr int GRID_HEIGHT = 200; // Domyślna wysokość siatki
 
 // Ustawienia Okna i GUI (Wygląd)
 static constexpr int LEFT_PANEL_WIDTH = 850;  // Szerokość obszaru symulacji/wykresów
