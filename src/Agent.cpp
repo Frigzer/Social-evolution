@@ -17,14 +17,16 @@ static Action flip(Action a) {
     return (a == Action::Cooperate) ? Action::Defect : Action::Cooperate;
 }
 
-static float calculateMyPayoff(Action my, Action their, const PayoffMatrix& m) {
-    if (my == Action::Cooperate && their == Action::Cooperate) return m.R;
-    if (my == Action::Cooperate && their == Action::Defect)    return m.S;
-    if (my == Action::Defect && their == Action::Cooperate) return m.T;
-    return m.P; // D vs D
+static float calculatePayoff(Action my, Action their, const PayoffMatrix& m) {
+    if (my == Action::Cooperate) {
+        return (their == Action::Cooperate) ? m.R : m.S;
+    }
+    else {
+        return (their == Action::Cooperate) ? m.T : m.P;
+    }
 }
 
-Action Agent::decideAction(int neighborIdx, const Agent* neighbor, const PayoffMatrix& matrix, float reputationThreshold) const {
+Action Agent::decideAction(int neighborIdx, const Agent* neighbor, const PayoffMatrix& matrix, float pavlovThreshold, float reputationThreshold) const {
     // Zabezpieczenie na wypadek zmiany rozmiaru sąsiedztwa
     if (neighborIdx >= (int)memory.size()) return Action::Cooperate;
 
@@ -51,34 +53,16 @@ Action Agent::decideAction(int neighborIdx, const Agent* neighbor, const PayoffM
         return rel.theirLastAction;
 
     case AgentType::Pavlov: {
-        // 1. Ile zarobiłem w ostatniej rundzie z tym gościem?
-        float lastPayoff = calculateMyPayoff(rel.myLastAction, rel.theirLastAction, matrix);
+        // 1. Ile zarobiłem ostatnio z tym sąsiadem?
+        float lastPayoff = calculatePayoff(rel.myLastAction, rel.theirLastAction, matrix);
 
-        // 2. Co w tej grze oznacza "Sukces"?
-        // Tworzymy listę wszystkich możliwych wypłat
-        std::vector<float> possiblePayoffs = { matrix.R, matrix.T, matrix.S, matrix.P };
-
-        // Sortujemy rosnąco (najmniejsza -> największa)
-        std::sort(possiblePayoffs.begin(), possiblePayoffs.end());
-
-        // W standardowych grach 2x2 są 4 wyniki.
-        // Prawdziwy Pavlov uznaje za sukces dwa najwyższe wyniki.
-        // possiblePayoffs[0] = Najgorszy (zwykle S)
-        // possiblePayoffs[1] = Słaby (zwykle P)
-        // possiblePayoffs[2] = Dobry (zwykle R)
-        // possiblePayoffs[3] = Najlepszy (zwykle T)
-
-        // Próg zadowolenia to "bycie lepszym niż dwa najgorsze scenariusze"
-        // (W PD: R i T są OK. W Chicken: R i T są OK.)
-        float successThreshold = possiblePayoffs[2];
-
-        // Uwaga na floating point precision, używamy >= z małym marginesem albo po prostu >=
-        // Jeśli zarobiłem tyle co próg lub więcej -> Stay.
-        if (lastPayoff >= successThreshold) {
-            return rel.myLastAction; // Win-Stay
+        // 2. Win-Stay, Lose-Shift
+        // Jeśli zarobiłem powyżej progu aspiracji -> Jestem zadowolony (Win) -> Powtarzam.
+        if (lastPayoff >= pavlovThreshold) {
+            return rel.myLastAction;
         }
         else {
-            return flip(rel.myLastAction); // Lose-Shift
+            return (rel.myLastAction == Action::Cooperate) ? Action::Defect : Action::Cooperate;
         }
     }
 
