@@ -15,6 +15,8 @@ if (POLICY CMP0141)
   set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
 endif()
 
+find_package(OpenMP REQUIRED)
+
 # ------------------ Dependencies ------------------
 include(FetchContent)
 FetchContent_Declare(SFML
@@ -59,6 +61,10 @@ target_include_directories(Social-evolution
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
+
+if(OpenMP_CXX_FOUND)
+    target_link_libraries(Social-evolution PRIVATE OpenMP::OpenMP_CXX)
+endif()
 
 target_link_libraries(Social-evolution
     PRIVATE
