@@ -4,7 +4,6 @@ SimulationRenderer::SimulationRenderer(Simulation& s)
     : sim(s)
 {
     cellSize = (float)LEFT_PANEL_WIDTH / sim.grid.width;
-    printf("%d", sim.grid.height);
 }
 
 void SimulationRenderer::draw(sf::RenderTarget& target) {
