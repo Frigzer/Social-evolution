@@ -38,12 +38,19 @@ void Simulation::playOneRound() {
     const int W = grid.width;
     const int H = grid.height;
 
+    std::vector<float> outcomes = { matrix.R, matrix.T, matrix.S, matrix.P };
+
+    std::sort(outcomes.begin(), outcomes.end());
+
+    float pavlovThreshold = (outcomes[1] + outcomes[2]) / 2.0f;
+
     struct AgentDecisions {
         std::vector<Action> actions;
     };
     std::vector<AgentDecisions> currentDecisions(W * H);
 
     // KROK 1: Decyzje
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
             Agent* me = grid.get(x, y);
@@ -75,7 +82,7 @@ void Simulation::playOneRound() {
                 }
                 // --------------------------
 
-                Action act = me->decideAction((int)i, neighbor, matrix, reputationThreshold);
+                Action act = me->decideAction((int)i, neighbor, matrix, pavlovThreshold, reputationThreshold);
                 currentDecisions[myIdx].actions[i] = act;
 
                 if (act == Action::Cooperate) coopCount++;
@@ -95,6 +102,7 @@ void Simulation::playOneRound() {
     std::vector<float> roundPayoff(W * H, 0.0f);
     std::vector<int> roundK(W * H, 0);
 
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
             Agent* me = grid.get(x, y);
@@ -159,6 +167,7 @@ void Simulation::playOneRound() {
     }
 
     // KROK 3: Aplikacja wypłat (bez zmian)
+#pragma omp parallel for collapse(2)
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
             Agent* a = grid.get(x, y);
