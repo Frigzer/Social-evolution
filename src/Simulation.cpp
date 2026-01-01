@@ -38,88 +38,136 @@ void Simulation::playOneRound() {
     const int W = grid.width;
     const int H = grid.height;
 
-    float currentPavlovThreshold = matrix.P + 0.001f;
+    struct AgentDecisions {
+        std::vector<Action> actions;
+    };
+    std::vector<AgentDecisions> currentDecisions(W * H);
 
-    // 1) SYNCHRONICZNA decyzja: wylicz nextAction dla każdego agenta
-    std::vector<Action> nextActions(W * H, Action::Cooperate);
-    std::vector<char> hasAgent(W * H, 0);
-
+    // KROK 1: Decyzje
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            Agent* a = grid.get(x, y);
-            if (!a) continue;
+            Agent* me = grid.get(x, y);
+            if (!me) continue;
 
-            int idx = y * W + x;
-            hasAgent[idx] = 1;
+            int myIdx = y * W + x;
+            auto neighborsCoords = grid.getNeighborCoords(x, y);
 
-            std::vector<const Agent*> neighbors;
-            auto coords = grid.getNeighborCoords(x, y);
-            neighbors.reserve(coords.size());
-            for (auto [nx, ny] : coords) {
-                neighbors.push_back(grid.get(nx, ny));
+            if (me->memory.size() != neighborsCoords.size()) {
+                me->resetMemory((int)neighborsCoords.size());
             }
 
-            nextActions[idx] = a->decideAction(neighbors, reputationThreshold, currentPavlovThreshold);
+            currentDecisions[myIdx].actions.resize(neighborsCoords.size());
+            int coopCount = 0;
+
+            for (size_t i = 0; i < neighborsCoords.size(); ++i) {
+                auto [nx, ny] = neighborsCoords[i];
+                Agent* neighbor = grid.get(nx, ny);
+
+                // --- LOGIKA ID (NOWOŚĆ) ---
+                int currentNeighborId = (neighbor) ? neighbor->id : -1;
+
+                // Sprawdzamy, czy w pamięci na slocie [i] mamy tego samego agenta
+                if (me->memory[i].agentId != currentNeighborId) {
+                    // To jest ktoś nowy (lub puste pole)! Resetujemy relację.
+                    me->memory[i].agentId = currentNeighborId;
+                    me->memory[i].myLastAction = Action::Cooperate;
+                    me->memory[i].theirLastAction = Action::Cooperate;
+                }
+                // --------------------------
+
+                Action act = me->decideAction((int)i, neighbor, matrix, reputationThreshold);
+                currentDecisions[myIdx].actions[i] = act;
+
+                if (act == Action::Cooperate) coopCount++;
+            }
+
+            if (neighborsCoords.size() > 0) {
+                float ratio = (float)coopCount / (float)neighborsCoords.size();
+                me->visualAction = (ratio >= 0.5f) ? Action::Cooperate : Action::Defect;
+            }
+            else {
+                me->visualAction = Action::Cooperate;
+            }
         }
     }
 
-    // zastosuj akcje (synchronicznie)
-    for (int y = 0; y < H; ++y) {
-        for (int x = 0; x < W; ++x) {
-            int idx = y * W + x;
-            if (!hasAgent[idx]) continue;
-            Agent* a = grid.get(x, y);
-            if (!a) continue;
-
-            a->lastAction = a->currentAction;
-            a->currentAction = nextActions[idx];
-        }
-    }
-
-    // 2) PAYOFF tej rundy (nie zerujemy payoff globalnego, tylko liczymy roundPayoff i dodajemy)
+    // KROK 2: Wypłaty i aktualizacja pamięci
     std::vector<float> roundPayoff(W * H, 0.0f);
     std::vector<int> roundK(W * H, 0);
 
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
-            Agent* a = grid.get(x, y);
-            if (!a) continue;
+            Agent* me = grid.get(x, y);
+            if (!me) continue;
+
+            int myIdx = y * W + x;
+            auto neighborsCoords = grid.getNeighborCoords(x, y);
 
             float sum = 0.0f;
             int k = 0;
+            float cooperatedCount = 0.0f;
 
-            auto neigh = grid.getNeighborCoords(x, y);
-            for (auto [nx, ny] : neigh) {
-                Agent* n = grid.get(nx, ny);
-                if (!n) continue;
+            for (size_t i = 0; i < neighborsCoords.size(); ++i) {
+                auto [nx, ny] = neighborsCoords[i];
+                Agent* neighbor = grid.get(nx, ny);
 
-                sum += payoffVs(a->currentAction, n->currentAction);
+                // Jeśli sąsiad zniknął (jest nullptr), ale my pamiętamy ID, to w następnej turze
+                // (Krok 1) zostanie to wyłapane i zresetowane.
+                if (!neighbor) {
+                    // Tylko upewniamy się, że pamięć jest spójna
+                    me->memory[i].agentId = -1;
+                    continue;
+                }
+
+                Action myAction = currentDecisions[myIdx].actions[i];
+
+                // Znajdowanie akcji sąsiada (bez zmian)
+                int neighborIdx = ny * W + nx;
+                auto neighborsOfNeighbor = grid.getNeighborCoords(nx, ny);
+                int meInNeighborList = -1;
+                for (size_t j = 0; j < neighborsOfNeighbor.size(); ++j) {
+                    if (neighborsOfNeighbor[j].first == x && neighborsOfNeighbor[j].second == y) {
+                        meInNeighborList = (int)j;
+                        break;
+                    }
+                }
+
+                Action hisAction = Action::Cooperate;
+                if (meInNeighborList != -1) {
+                    hisAction = currentDecisions[neighborIdx].actions[meInNeighborList];
+                }
+
+                sum += payoffVs(myAction, hisAction);
                 k++;
+
+                // Aktualizacja pamięci
+                me->memory[i].myLastAction = myAction;
+                me->memory[i].theirLastAction = hisAction;
+                // ID jest już ustawione w Kroku 1
+
+                if (myAction == Action::Cooperate) cooperatedCount++;
             }
 
-            int idx = y * W + x;
-            roundK[idx] = k;
-            roundPayoff[idx] = normalizePayoff ? ((k > 0) ? (sum / (float)k) : 0.0f) : sum;
+            roundPayoff[myIdx] = normalizePayoff ? ((k > 0) ? (sum / (float)k) : 0.0f) : sum;
+            roundK[myIdx] = k;
+
+            if (k > 0) {
+                float coopRatio = cooperatedCount / (float)k;
+                me->reputation = (1.0f - reputationAlpha) * me->reputation + reputationAlpha * coopRatio;
+            }
         }
     }
 
-    // 3) Aktualizacja: dodaj roundPayoff do kumulowanego payoff, ustaw lastPayoff (dla Pavlova),
-    //    oraz aktualizuj reputację EMA z akcji
+    // KROK 3: Aplikacja wypłat (bez zmian)
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
             Agent* a = grid.get(x, y);
-            if (!a) continue;
-
-            int idx = y * W + x;
-
-            a->payoff += roundPayoff[idx];
-            a->lastPayoff = roundPayoff[idx];
-
-            // reputacja: update tylko jeśli agent faktycznie miał interakcje
-            if (roundK[idx] > 0) {
-                float cooperated = (a->currentAction == Action::Cooperate) ? 1.0f : 0.0f;
-                a->reputation = (1.0f - reputationAlpha) * a->reputation + reputationAlpha * cooperated;
-                a->reputation = std::clamp(a->reputation, 0.0f, 1.0f);
+            if (a) {
+                int idx = y * W + x;
+                a->payoff += roundPayoff[idx];
+                a->lastPayoff = roundPayoff[idx];
+                a->lastAction = a->visualAction;
+                a->currentAction = a->visualAction;
             }
         }
     }
@@ -272,6 +320,9 @@ void Simulation::step() {
                 child->currentAction = Action::Cooperate;
                 child->lastAction = Action::Cooperate;
 
+                int neighborsCount = (grid.neighborhood == NeighborhoodType::Moore) ? 8 : 4;
+                child->resetMemory(neighborsCount);
+
                 // reputacja neutralna
                 child->reputation = 0.5f;
 
@@ -381,6 +432,10 @@ void Simulation::step() {
                         a->type = nextTypes[idx];
                         a->strategyAge = 0;
                         a->currentAction = Action::Cooperate; // Reset zachowania
+
+                        int neighborsCount = (grid.neighborhood == NeighborhoodType::Moore) ? 8 : 4;
+                        a->resetMemory(neighborsCount);
+
                         a->reputation = 0.5f; // Nowa tożsamość = nowa reputacja
                     }
                     else {
@@ -566,6 +621,8 @@ void Simulation::newCsvFile() {
 }
 
 void Simulation::reset() {
+    Agent::nextId = 0; // Resetujemy licznik ID, żeby nie rósł w nieskończoność
+
     // 1. Czyścimy wszystko
     agents.clear();      // Usuwa obiekty agentów (unique_ptr)
     grid.clear();        // Zeruje wskaźniki na siatce
@@ -601,6 +658,9 @@ void Simulation::reset() {
             a->payoff = 0.0f;
             a->lastPayoff = 0.0f;
             a->reputation = 0.5f;
+
+            int neighborsCount = (grid.neighborhood == NeighborhoodType::Moore) ? 8 : 4;
+            a->resetMemory(neighborsCount);
 
             grid.get(x, y) = a.get();
             agents.push_back(std::move(a));

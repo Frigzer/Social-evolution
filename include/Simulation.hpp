@@ -7,10 +7,6 @@
 #include <vector>
 #include <memory>
 
-struct PayoffMatrix {
-    float R, T, S, P;
-};
-
 enum class UpdateRule {
     BestNeighbor,
     Fermi

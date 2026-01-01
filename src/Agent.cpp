@@ -1,14 +1,43 @@
 #include "Agent.hpp"
 
-Agent::Agent(AgentType t)
-    : type(t), currentAction(Action::Cooperate), lastAction(Action::Cooperate) {
+// Inicjalizacja licznika statycznego
+int Agent::nextId = 0;
+
+Agent::Agent(AgentType t) : type(t) {
+    // Przypisujemy unikalne ID i inkrementujemy licznik
+    id = nextId++;
+}
+
+void Agent::resetMemory(int neighborsCount) {
+    memory.clear();
+    memory.resize(neighborsCount); // Pusta relacja = start od Cooperation
 }
 
 static Action flip(Action a) {
     return (a == Action::Cooperate) ? Action::Defect : Action::Cooperate;
 }
 
-Action Agent::decideAction(const std::vector<const Agent*>& neighbors, float reputationThreshold, float pavlovThreshold) const {
+static float calculateMyPayoff(Action my, Action their, const PayoffMatrix& m) {
+    if (my == Action::Cooperate && their == Action::Cooperate) return m.R;
+    if (my == Action::Cooperate && their == Action::Defect)    return m.S;
+    if (my == Action::Defect && their == Action::Cooperate) return m.T;
+    return m.P; // D vs D
+}
+
+Action Agent::decideAction(int neighborIdx, const Agent* neighbor, const PayoffMatrix& matrix, float reputationThreshold) const {
+    // Zabezpieczenie na wypadek zmiany rozmiaru sąsiedztwa
+    if (neighborIdx >= (int)memory.size()) return Action::Cooperate;
+
+    const auto& rel = memory[neighborIdx];
+
+    // Jeśli w pamięci mamy ID innej osoby niż ta, która stoi obok,
+    // to znaczy, że Simulation.cpp jeszcze nie zresetowało pamięci (lub coś dziwnego),
+    // więc traktujemy to jako startową współpracę.
+    // (Główny reset robimy w Simulation.cpp, ale to jest bezpiecznik).
+    if (neighbor && rel.agentId != neighbor->id) {
+        return Action::Cooperate;
+    }
+
     switch (type) {
     case AgentType::AlwaysCooperate:
         return Action::Cooperate;
@@ -16,81 +45,70 @@ Action Agent::decideAction(const std::vector<const Agent*>& neighbors, float rep
     case AgentType::AlwaysDefect:
         return Action::Defect;
 
-    case AgentType::TitForTat: {
-        // Wersja przestrzenna: jeśli JAKIKOLWIEK sąsiad w poprzedniej rundzie zdradził -> zdradzam,
-        // w przeciwnym razie współpracuję.
-        for (const auto* n : neighbors) {
-            if (n && n->lastAction == Action::Defect) {
-                return Action::Defect;
-            }
-        }
-        return Action::Cooperate;
-    }
+    case AgentType::TitForTat:
+        // "Rób to, co ten konkretny sąsiad zrobił ci w poprzedniej turze."
+        // (Na start - relacja jest zainicjowana jako Cooperate)
+        return rel.theirLastAction;
 
     case AgentType::Pavlov: {
-        // Win-Stay, Lose-Shift:
-        // jeśli poprzednia runda dała "dobry" payoff -> zostaję przy swojej akcji,
-        // jeśli "zły" -> zmieniam.
-        if (lastPayoff >= pavlovThreshold) {
-            return currentAction; // stay
+        // 1. Ile zarobiłem w ostatniej rundzie z tym gościem?
+        float lastPayoff = calculateMyPayoff(rel.myLastAction, rel.theirLastAction, matrix);
+
+        // 2. Co w tej grze oznacza "Sukces"?
+        // Tworzymy listę wszystkich możliwych wypłat
+        std::vector<float> possiblePayoffs = { matrix.R, matrix.T, matrix.S, matrix.P };
+
+        // Sortujemy rosnąco (najmniejsza -> największa)
+        std::sort(possiblePayoffs.begin(), possiblePayoffs.end());
+
+        // W standardowych grach 2x2 są 4 wyniki.
+        // Prawdziwy Pavlov uznaje za sukces dwa najwyższe wyniki.
+        // possiblePayoffs[0] = Najgorszy (zwykle S)
+        // possiblePayoffs[1] = Słaby (zwykle P)
+        // possiblePayoffs[2] = Dobry (zwykle R)
+        // possiblePayoffs[3] = Najlepszy (zwykle T)
+
+        // Próg zadowolenia to "bycie lepszym niż dwa najgorsze scenariusze"
+        // (W PD: R i T są OK. W Chicken: R i T są OK.)
+        float successThreshold = possiblePayoffs[2];
+
+        // Uwaga na floating point precision, używamy >= z małym marginesem albo po prostu >=
+        // Jeśli zarobiłem tyle co próg lub więcej -> Stay.
+        if (lastPayoff >= successThreshold) {
+            return rel.myLastAction; // Win-Stay
         }
         else {
-            return flip(currentAction); // shift
+            return flip(rel.myLastAction); // Lose-Shift
         }
     }
 
-    case AgentType::Discriminator: {
-        // Jeśli średnia reputacja sąsiadów >= threshold -> C, inaczej D
-        // (neutralnie: przy braku sąsiadów -> C)
-        float sum = 0.0f;
-        int k = 0;
-        for (const auto* n : neighbors) {
-            if (!n) continue;
-            sum += n->reputation;
-            k++;
-        }
-        if (k == 0) return Action::Cooperate;
-
-        float avg = sum / (float)k;
-        return (avg >= reputationThreshold) ? Action::Cooperate : Action::Defect;
-    }
+    case AgentType::Discriminator: 
+        // Reputacja jest globalna, więc tu bez zmian
+        if (!neighbor) return Action::Cooperate;
+        return (neighbor->reputation >= reputationThreshold) ? Action::Cooperate : Action::Defect;
     }
 
     return Action::Cooperate;
 }
 
 sf::Color Agent::getColor() const {
-    // Krok 1: Wybierz kolor bazowy (Tożsamość / Strategia)
+    // Krok 1: Wybierz kolor bazowy (Tożsamość)
     sf::Color baseColor = sf::Color::White;
 
     switch (type) {
-    case AgentType::AlwaysCooperate:
-        return sf::Color(50, 255, 50); // Zawsze Jasny Zielony
-
-    case AgentType::AlwaysDefect:
-        return sf::Color(255, 50, 50); // Zawsze Jasny Czerwony (Agresor)
-
-    case AgentType::TitForTat:
-        baseColor = sf::Color(50, 100, 255); // Bazowy Niebieski
-        break;
-
-    case AgentType::Pavlov:
-        baseColor = sf::Color(255, 255, 50); // Bazowy Żółty
-        break;
-
-    case AgentType::Discriminator:
-        baseColor = sf::Color(180, 60, 255); // Bazowy Fiolet
-        break;
+    case AgentType::AlwaysCooperate: return sf::Color(50, 255, 50);
+    case AgentType::AlwaysDefect:    return sf::Color(255, 50, 50);
+    case AgentType::TitForTat:       baseColor = sf::Color(50, 100, 255); break;
+    case AgentType::Pavlov:          baseColor = sf::Color(255, 255, 50); break;
+    case AgentType::Discriminator:   baseColor = sf::Color(180, 60, 255); break;
     }
 
-    // Krok 2: Zmodyfikuj odcień w zależności od AKCJI (Zachowanie)
-    // Dotyczy tylko strategii adaptacyjnych (TFT, Pavlov, Disc)
-    if (currentAction == Action::Cooperate) {
-        // Współpraca = Czysty kolor (Świetlisty)
+    // Krok 2: Cieniowanie na podstawie DOMINUJĄCEJ akcji (visualAction)
+    // To obliczamy w Simulation.cpp
+    if (visualAction == Action::Cooperate) {
         return baseColor;
     }
     else {
-        // Zdrada = Przyciemniony kolor
         return sf::Color(
             (baseColor.r * 0.4f),
             (baseColor.g * 0.4f),
