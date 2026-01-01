@@ -53,7 +53,7 @@ public:
     Agent(AgentType t = AgentType::AlwaysCooperate);
 
     // neighborIdx - który to sąsiad (żeby sięgnąć do pamięci)
-    Action decideAction(int neighborIdx, const Agent* neighbor, const PayoffMatrix& matrix, float reputationThreshold) const;
+    Action decideAction(int neighborIdx, const Agent* neighbor, const PayoffMatrix& matrix, float pavlovThreshold, float reputationThreshold) const;
 
     // Resetuje pamięć (np. przy narodzinach nowego agenta)
     void resetMemory(int neighborsCount);
