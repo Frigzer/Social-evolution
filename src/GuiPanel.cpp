@@ -169,6 +169,8 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
             sim.mode = (modeIdx == 0) ? EvolutionMode::Imitation : EvolutionMode::DeathBirth;
         }
 
+        ImGui::TextDisabled("--- Imitation Mode ---");
+
         const char* rules[] = { "Najlepszy Sąsiad", "Fermi (Probabilistyczne)" };
         int ruleIdx = (sim.updateRule == UpdateRule::BestNeighbor) ? 0 : 1;
         if (ImGui::Combo("Reguła Zmian", &ruleIdx, rules, IM_ARRAYSIZE(rules))) {
