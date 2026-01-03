@@ -3,7 +3,7 @@
 #include "Agent.hpp"
 
 enum class BoundaryMode {
-    Torus,
+    Periodic,
     Clamp,
     Reflect,
     Absorbing
@@ -19,7 +19,7 @@ class Grid {
 public:
     int width, height;
 
-    BoundaryMode boundary = BoundaryMode::Torus;
+    BoundaryMode boundary = BoundaryMode::Periodic;
     NeighborhoodType neighborhood = NeighborhoodType::Moore;
 
     std::vector<Agent*> agents;

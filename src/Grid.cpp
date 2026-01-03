@@ -42,7 +42,7 @@ bool Grid::isEmpty(int x, int y) const {
 
 int Grid::mapX(int x) const {
     switch (boundary) {
-    case BoundaryMode::Torus:   return modWrap(x, width);
+    case BoundaryMode::Periodic:   return modWrap(x, width);
     case BoundaryMode::Clamp:   return clampInt(x, 0, width - 1);
     case BoundaryMode::Reflect: return reflectIndex(x, width);
     case BoundaryMode::Absorbing:
@@ -54,7 +54,7 @@ int Grid::mapX(int x) const {
 
 int Grid::mapY(int y) const {
     switch (boundary) {
-    case BoundaryMode::Torus:   return modWrap(y, height);
+    case BoundaryMode::Periodic:   return modWrap(y, height);
     case BoundaryMode::Clamp:   return clampInt(y, 0, height - 1);
     case BoundaryMode::Reflect: return reflectIndex(y, height);
     case BoundaryMode::Absorbing:
