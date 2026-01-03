@@ -44,7 +44,7 @@ int Grid::mapX(int x) const {
     switch (boundary) {
     case BoundaryMode::Periodic:   return modWrap(x, width);
     case BoundaryMode::Fixed:   return clampInt(x, 0, width - 1);
-    case BoundaryMode::Reflect: return reflectIndex(x, width);
+    case BoundaryMode::Reflective: return reflectIndex(x, width);
     case BoundaryMode::Absorbing:
         // dla Absorbing mapX/mapY nie są używane (obsługujemy to w getNeighborCoords)
         return x;
@@ -56,7 +56,7 @@ int Grid::mapY(int y) const {
     switch (boundary) {
     case BoundaryMode::Periodic:   return modWrap(y, height);
     case BoundaryMode::Fixed:   return clampInt(y, 0, height - 1);
-    case BoundaryMode::Reflect: return reflectIndex(y, height);
+    case BoundaryMode::Reflective: return reflectIndex(y, height);
     case BoundaryMode::Absorbing:
         return y;
     }

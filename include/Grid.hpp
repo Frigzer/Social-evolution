@@ -5,7 +5,7 @@
 enum class BoundaryMode {
     Periodic,
     Fixed,
-    Reflect,
+    Reflective,
     Absorbing
 };
 
