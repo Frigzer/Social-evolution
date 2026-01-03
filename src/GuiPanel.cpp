@@ -147,7 +147,7 @@ void GuiPanel::update(sf::RenderWindow& win, LeftPanelMode& leftMode) {
     // --- SEKCJA 3: ŚRODOWISKO ---
     if (ImGui::CollapsingHeader("Środowisko (Grid)")) {
 
-        const char* boundaryItems[] = { "Torus (Zawijanie)", "Ściana (Clamp)", "Odbicie (Reflect)", "Pustka (Absorbing)" };
+        const char* boundaryItems[] = { "Periodic (Zawijanie)", "Ściana (Fixed)", "Odbicie (Reflect)", "Pustka (Absorbing)" };
         int boundaryIdx = static_cast<int>(sim.grid.boundary);
         if (ImGui::Combo("Granice", &boundaryIdx, boundaryItems, IM_ARRAYSIZE(boundaryItems))) {
             sim.grid.boundary = static_cast<BoundaryMode>(boundaryIdx);
