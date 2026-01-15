@@ -20,11 +20,9 @@ enum class AgentType {
 
 // Struktura pamiętająca stan gry z KONKRETNYM sąsiadem
 struct Relationship {
-    int agentId = -1; // -1 oznacza brak relacji/puste pole
-
+    int agentId = -1; // ID sąsiada (-1 oznacza brak relacji/puste pole)
     Action myLastAction = Action::Cooperate;    // Co ja zagrałem ostatnio
     Action theirLastAction = Action::Cooperate; // Co on zagrał ostatnio
-    // Można tu dodać np. licznik zaufania dla bardziej złożonych strategii
 };
 
 class Agent {
