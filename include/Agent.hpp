@@ -11,11 +11,11 @@ enum class Action { Cooperate, Defect };
 
 // To jest "Osobowość" (Strategia życiowa)
 enum class AgentType {
-    AlwaysCooperate, // Naiwny Altruista (Zawsze C)
-    AlwaysDefect,    // Egoista (Zawsze D)
-    TitForTat,       // Wet za Wet (Sprawiedliwy) - wersja przestrzenna
-    Pavlov,          // Win-Stay, Lose-Shift (Oportunista)
-    Discriminator    // "Współpracuję z tymi o dobrej reputacji"
+    AlwaysCooperate, // Zawsze współpracuje (AllC)
+    AlwaysDefect,    // Zawsze zdradza (AllD)
+    TitForTat,       // Wet za wet (odwzajemnia ruch sąsiada)
+    Pavlov,          // Win-Stay, Lose-Shift (strategia oportunistyczna)
+    Discriminator    // Współpracuje tylko z agentami o dobrej reputacji
 };
 
 // Struktura pamiętająca stan gry z KONKRETNYM sąsiadem
