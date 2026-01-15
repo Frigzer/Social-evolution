@@ -12,7 +12,6 @@ static int modWrap(int v, int m) {
 }
 
 static int reflectIndex(int v, int m) {
-    // odbicie: -1 -> 0, m -> m-1, m+1 -> m-2 itd.
     if (m <= 1) return 0;
     while (v < 0 || v >= m) {
         if (v < 0) v = -v - 1;
