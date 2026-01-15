@@ -48,16 +48,10 @@ Action Agent::decideAction(int neighborIdx, const Agent* neighbor, const PayoffM
         return Action::Defect;
 
     case AgentType::TitForTat:
-        // "Rób to, co ten konkretny sąsiad zrobił ci w poprzedniej turze."
-        // (Na start - relacja jest zainicjowana jako Cooperate)
         return rel.theirLastAction;
 
     case AgentType::Pavlov: {
-        // 1. Ile zarobiłem ostatnio z tym sąsiadem?
         float lastPayoff = calculatePayoff(rel.myLastAction, rel.theirLastAction, matrix);
-
-        // 2. Win-Stay, Lose-Shift
-        // Jeśli zarobiłem powyżej progu aspiracji -> Jestem zadowolony (Win) -> Powtarzam.
         if (lastPayoff >= pavlovThreshold) {
             return rel.myLastAction;
         }
@@ -65,9 +59,7 @@ Action Agent::decideAction(int neighborIdx, const Agent* neighbor, const PayoffM
             return (rel.myLastAction == Action::Cooperate) ? Action::Defect : Action::Cooperate;
         }
     }
-
     case AgentType::Discriminator: 
-        // Reputacja jest globalna, więc tu bez zmian
         if (!neighbor) return Action::Cooperate;
         return (neighbor->reputation >= reputationThreshold) ? Action::Cooperate : Action::Defect;
     }
