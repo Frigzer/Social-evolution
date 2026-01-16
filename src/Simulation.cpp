@@ -70,7 +70,6 @@ void Simulation::playOneRound() {
                 auto [nx, ny] = neighborsCoords[i];
                 Agent* neighbor = grid.get(nx, ny);
 
-                // --- LOGIKA ID (NOWOŚĆ) ---
                 int currentNeighborId = (neighbor) ? neighbor->id : -1;
 
                 // Sprawdzamy, czy w pamięci na slocie [i] mamy tego samego agenta
@@ -122,7 +121,6 @@ void Simulation::playOneRound() {
                 // Jeśli sąsiad zniknął (jest nullptr), ale my pamiętamy ID, to w następnej turze
                 // (Krok 1) zostanie to wyłapane i zresetowane.
                 if (!neighbor) {
-                    // Tylko upewniamy się, że pamięć jest spójna
                     me->memory[i].agentId = -1;
                     continue;
                 }
@@ -151,7 +149,6 @@ void Simulation::playOneRound() {
                 // Aktualizacja pamięci
                 me->memory[i].myLastAction = myAction;
                 me->memory[i].theirLastAction = hisAction;
-                // ID jest już ustawione w Kroku 1
 
                 if (myAction == Action::Cooperate) cooperatedCount++;
             }
@@ -166,7 +163,7 @@ void Simulation::playOneRound() {
         }
     }
 
-    // KROK 3: Aplikacja wypłat (bez zmian)
+    // KROK 3: Aplikacja wypłat
 #pragma omp parallel for collapse(2)
     for (int y = 0; y < H; ++y) {
         for (int x = 0; x < W; ++x) {
