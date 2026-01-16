@@ -10,7 +10,7 @@ Agent::Agent(AgentType t) : type(t) {
 
 void Agent::resetMemory(int neighborsCount) {
     memory.clear();
-    memory.resize(neighborsCount); // Pusta relacja = start od Cooperation
+    memory.resize(neighborsCount);
 }
 
 static Action flip(Action a) {
@@ -27,15 +27,10 @@ static float calculatePayoff(Action my, Action their, const PayoffMatrix& m) {
 }
 
 Action Agent::decideAction(int neighborIdx, const Agent* neighbor, const PayoffMatrix& matrix, float pavlovThreshold, float reputationThreshold) const {
-    // Zabezpieczenie na wypadek zmiany rozmiaru sąsiedztwa
     if (neighborIdx >= (int)memory.size()) return Action::Cooperate;
 
     const auto& rel = memory[neighborIdx];
 
-    // Jeśli w pamięci mamy ID innej osoby niż ta, która stoi obok,
-    // to znaczy, że Simulation.cpp jeszcze nie zresetowało pamięci (lub coś dziwnego),
-    // więc traktujemy to jako startową współpracę.
-    // (Główny reset robimy w Simulation.cpp, ale to jest bezpiecznik).
     if (neighbor && rel.agentId != neighbor->id) {
         return Action::Cooperate;
     }
