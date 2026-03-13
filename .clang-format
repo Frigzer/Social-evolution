@@ -1,0 +1,75 @@
+BasedOnStyle: LLVM   # LLVM | Google | Chromium | Mozilla | WebKit | Microsoft | GNU
+
+# Indentation
+IndentWidth: 4
+TabWidth: 4
+UseTab: ForIndentation   # Never | ForIndentation | Always
+
+# Column / Line breaking
+ColumnLimit: 120
+BinPackParameters: true
+
+# Braces
+BreakBeforeBraces: Custom   # Attach | Allman | GNU | Linux | Stroustrup | Custom
+BraceWrapping:
+  AfterCaseLabel: true
+  AfterClass: true
+  AfterNamespace: true
+  AfterStruct: true
+  AfterUnion: true
+  BeforeCatch: true
+  BeforeLambdaBody: true
+  AfterControlStatement: true
+  AfterFunction: true
+  BeforeElse: true
+  AfterEnum: true
+  SplitEmptyFunction: false
+  SplitEmptyRecord: false
+  SplitEmptyNamespace: false
+
+# Short Statements
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline   # None | Inline | All | Empty
+AllowShortBlocksOnASingleLine: Empty       # Never | Empty | Always
+AllowShortCaseLabelsOnASingleLine: true
+
+# Spaces & Alignment
+SpaceBeforeParens: ControlStatements   # Never | ControlStatements | Always
+SpacesInParentheses: true
+SpacesInAngles: true
+SpacesInSquareBrackets: true
+SpacesInCStyleCastParentheses: true
+SpaceBeforeAssignmentOperators: true
+
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: false
+AlignTrailingComments: true
+AlignAfterOpenBracket: Align   # Align | DontAlign | AlwaysBreak
+
+# Pointers & References
+PointerAlignment: Left   # Left | Right | Middle
+ReferenceAlignment: Left # Left | Right | Middle
+
+# Includes
+SortIncludes: true
+IncludeBlocks: Preserve   # Preserve | Merge | Regroup
+
+# Namespaces
+NamespaceIndentation: None   # None | Inner | All
+CompactNamespaces: false      # true (namespace a::b {}) | false (expanded blocks)
+
+# Classes / Constructors
+AccessModifierOffset: -4
+BreakConstructorInitializers: BeforeColon   # BeforeColon | BeforeComma | AfterColon
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+# Comments & Whitespace
+ReflowComments: true
+SpacesBeforeTrailingComments: 2
+KeepEmptyLinesAtEOF: false
+KeepEmptyLinesAtTheStartOfBlocks: false
+
+# Templates
+AlwaysBreakTemplateDeclarations: Yes  # Yes | Multiline | No
+RequiresClausePosition: WithPreceding # OwnLine | WithPreceding | WithFollowing
